@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ElectroCAD PRO — Análisis IA</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root {
+  --bg:#0A0C0F; --surface:#111418; --panel:#161B22; --border:#1E2633;
+  --accent:#F5A623; --acdim:#C47D0E; --blue:#2B8FE8; --green:#22C55E;
+  --red:#EF4444; --yellow:#EAB308; --purple:#A855F7;
+  --text:#E2E8F0; --muted:#64748B;
+  --font:'Rajdhani',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--border)}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:1px solid var(--border);padding:12px 16px;
+  display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50}
+.hdr-logo{width:36px;height:36px;background:var(--accent);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#000;flex-shrink:0}
+.hdr-title{font-size:15px;font-weight:700;letter-spacing:0.5px}
+.hdr-sub{font-size:8px;color:var(--muted);font-family:var(--mono);letter-spacing:1.5px}
+.hdr-dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 5px var(--green);animation:pulse 2s infinite;margin-left:auto;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* BODY */
+.wrap{padding:16px;max-width:600px;margin:0 auto}
+
+/* TABS */
+.tabs{display:flex;background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:3px;margin-bottom:14px}
+.tab{flex:1;padding:9px 8px;border-radius:6px;cursor:pointer;text-align:center;
+  font-size:12px;font-weight:700;letter-spacing:0.3px;transition:all .2s;color:var(--muted)}
+.tab.on{background:var(--accent);color:#000}
+
+/* INFO */
+.info{background:rgba(43,143,232,.08);border:1px solid rgba(43,143,232,.3);
+  border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;
+  color:var(--blue);display:flex;gap:8px;align-items:flex-start;line-height:1.5}
+
+/* UPLOAD */
+.drop{border:2px dashed var(--border);border-radius:12px;padding:36px 20px;
+  text-align:center;cursor:pointer;transition:all .2s}
+.drop.drag{border-color:var(--accent);background:rgba(245,166,35,.05)}
+.drop-ico{font-size:40px;margin-bottom:10px}
+.drop-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.drop-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.drop-btn{display:inline-block;padding:10px 22px;background:var(--accent);
+  color:#000;border-radius:6px;font-weight:700;font-size:13px}
+.drop-hint{font-size:9px;color:var(--muted);margin-top:10px;font-family:var(--mono)}
+#fi{display:none}
+
+/* PREVIEW */
+.prev-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.prev-img{width:100%;max-height:320px;object-fit:contain;background:var(--surface);display:block}
+.prev-foot{padding:12px 14px;display:flex;gap:8px;align-items:center}
+.prev-name{font-size:11px;color:var(--muted);font-family:var(--mono);flex:1;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chg-btn{padding:6px 12px;background:transparent;border:1px solid var(--border);
+  color:var(--muted);border-radius:5px;cursor:pointer;font-family:var(--font);font-size:11px;white-space:nowrap}
+
+/* ANALYZE BTN */
+.anl-btn{width:100%;padding:14px;border-radius:8px;border:none;cursor:pointer;
+  font-family:var(--font);font-size:16px;font-weight:700;letter-spacing:0.5px;
+  background:linear-gradient(135deg,var(--accent),var(--acdim));color:#000;
+  transition:all .2s;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:8px}
+.anl-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed}
+.anl-btn:not(:disabled):active{transform:scale(.98)}
+
+/* LOADING */
+.ld-box{background:var(--panel);border:1px solid var(--border);border-radius:10px;
+  padding:28px 20px;text-align:center;margin-top:14px}
+.ld-ico{font-size:40px;margin-bottom:12px;animation:spin 2s linear infinite;display:inline-block}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.ld-title{font-size:17px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.ld-step{font-size:12px;color:var(--muted)}
+.scan{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:16px}
+.scan-f{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));
+  border-radius:2px;animation:sc 1.5s ease-in-out infinite}
+@keyframes sc{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+
+/* ERROR */
+.err-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  border-radius:8px;padding:12px 14px;color:var(--red);font-size:12px;
+  display:flex;gap:8px;align-items:flex-start;margin-top:12px;line-height:1.5}
+
+/* CARDS */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:14px;margin-bottom:12px}
+.ctitle{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:12px}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:3px;
+  font-size:9px;font-weight:700;letter-spacing:.4px}
+.tg{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.tb{background:rgba(43,143,232,.15);color:var(--blue);border:1px solid rgba(43,143,232,.3)}
+.ty{background:rgba(234,179,8,.15);color:var(--yellow);border:1px solid rgba(234,179,8,.3)}
+.tr{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.ta{background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3)}
+.tp{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+
+/* STAT GRID */
+.sg{display:grid;gap:10px;margin-bottom:12px}
+.sg2{grid-template-columns:1fr 1fr}
+.sg3{grid-template-columns:1fr 1fr 1fr}
+.sb{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:12px}
+.sl{font-size:8px;color:var(--muted);letter-spacing:1.5px;font-weight:600;margin-bottom:5px}
+.sv{font-family:var(--mono);font-size:20px;font-weight:700}
+
+/* RESULT HEADER */
+.rh{background:linear-gradient(135deg,var(--panel),var(--surface));border:1px solid var(--border);
+  border-radius:10px;padding:14px;margin-bottom:12px}
+.rh-img{width:100%;max-height:180px;object-fit:contain;border-radius:6px;
+  border:2px solid var(--blue);display:block;margin-bottom:10px}
+.rh-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.rh-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+.rh-obs{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ACCORDION */
+.ac-item{margin-bottom:7px}
+.ac-hdr{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 12px;background:var(--surface);cursor:pointer;
+  border-radius:6px;border:1px solid var(--border);transition:border-color .15s}
+.ac-hdr.op{border-color:var(--accent);border-radius:6px 6px 0 0}
+.ac-hl{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.ac-name{font-weight:700;font-size:13px}
+.ac-body{background:rgba(17,20,24,.6);border:1px solid var(--accent);
+  border-top:none;border-radius:0 0 6px 6px;padding:12px;display:none}
+.ac-body.op{display:block}
+.ac-row{display:flex;justify-content:space-between;padding:6px 0;
+  border-bottom:1px solid rgba(30,38,51,.5);font-size:11px}
+.ac-row:last-child{border-bottom:none}
+
+/* CABLE GRID */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cb{background:var(--surface);border-radius:6px;padding:10px;text-align:center}
+.cv{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)}
+.cl{font-size:8px;color:var(--muted);margin-top:3px}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{padding:5px 8px;text-align:left;font-size:8px;letter-spacing:1.2px;
+  color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+td{padding:7px 8px;border-bottom:1px solid rgba(30,38,51,.4);vertical-align:top}
+tr:last-child td{border:none}
+
+/* ALERT */
+.al{padding:9px 12px;border-radius:6px;font-size:12px;
+  display:flex;gap:8px;align-items:flex-start;margin-bottom:7px;line-height:1.5}
+.al-w{background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:var(--yellow)}
+.al-g{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+
+/* EXPORT BAR */
+.xbar{background:var(--panel);border:1px solid rgba(34,197,94,.3);
+  border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.xbar-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.xbar-btns{display:flex;gap:7px}
+.xb{padding:9px 0;border-radius:6px;border:none;cursor:pointer;
+  font-family:var(--font);font-size:12px;font-weight:700;flex:1;text-align:center}
+.xb-pdf{background:var(--accent);color:#000}
+.xb-wa{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)!important}
+.xb-new{background:transparent;color:var(--muted);border:1px solid var(--border)!important}
+
+/* TOTAL */
+.tot{display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-top:1px solid var(--border);margin-top:6px}
+.tot-l{font-size:14px;font-weight:700}
+.tot-v{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent)}
+
+/* NOTIF */
+.notif{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);
+  padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;
+  background:var(--panel);border:1px solid var(--border);
+  box-shadow:0 4px 20px rgba(0,0,0,.5);z-index:999;
+  animation:nfIn .25s ease;display:none;white-space:nowrap;max-width:90vw}
+@keyframes nfIn{from{transform:translateX(-50%) translateY(20px);opacity:0}
+  to{transform:translateX(-50%) translateY(0);opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">⚡</div>
+  <div>
+    <div class="hdr-title">ElectroCAD PRO</div>
+    <div class="hdr-sub">ANÁLISIS IA · CLAUDE VISION · AEA 90364</div>
+  </div>
+  <div class="hdr-dot"></div>
+</div>
+
+<div class="wrap">
+
+  <div class="tabs">
+    <div class="tab on" id="tPlano" onclick="setModo('plano')">📐 Plano</div>
+    <div class="tab" id="tAmb" onclick="setModo('ambiente')">📷 Ambiente</div>
+  </div>
+
+  <div class="info" id="infoBanner">
+    ℹ <span id="infoTxt">Subí la foto del plano. La IA detecta ambientes, calcula circuitos, cableado y genera el presupuesto según AEA 90364.</span>
+  </div>
+
+  <!-- UPLOAD -->
+  <div id="secUp">
+    <div class="drop" id="dropZ" onclick="document.getElementById('fi').click()">
+      <div class="drop-ico" id="dIco">📐</div>
+      <div class="drop-title" id="dTitle">Foto del Plano</div>
+      <div class="drop-sub" id="dSub">Subí la foto del plano arquitectónico.<br>La IA calcula toda la instalación eléctrica.</div>
+      <div class="drop-btn">Seleccionar imagen</div>
+      <div class="drop-hint">JPG · PNG · WEBP · Máx. 10 MB</div>
+    </div>
+    <input type="file" id="fi" accept="image/*" onchange="handleFile(event)">
+  </div>
+
+  <!-- PREVIEW -->
+  <div id="secPrev" style="display:none">
+    <div class="prev-wrap">
+      <img id="prevImg" class="prev-img" alt="">
+      <div class="prev-foot">
+        <span class="prev-name" id="fName">—</span>
+        <button class="chg-btn" onclick="reset()">✕ Cambiar</button>
+      </div>
+    </div>
+    <button class="anl-btn" id="anlBtn" onclick="analizar()">⚡ Analizar con IA</button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="secLd" style="display:none">
+    <div class="ld-box">
+      <div class="ld-ico">⚡</div>
+      <div class="ld-title">Claude IA analizando...</div>
+      <div class="ld-step" id="ldStep">Procesando imagen...</div>
+      <div class="scan"><div class="scan-f"></div></div>
+    </div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="secErr" style="display:none">
+    <div class="err-box">
+      <span style="flex-shrink:0">✕</span>
+      <span id="errMsg"></span>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:10px;line-height:1.6;padding:0 4px">
+      <strong style="color:var(--text)">Posibles causas:</strong><br>
+      • El archivo se está abriendo desde la memoria interna del teléfono sin conexión HTTPS.<br>
+      • <strong style="color:var(--accent)">Solución:</strong> Subí este archivo a <strong style="color:var(--text)">GitHub Pages</strong> o abrilo desde <strong style="color:var(--text)">Netlify Drop</strong> para tener URL https:// y que funcione en el celular.<br>
+      • Alternativa rápida: abrilo desde una PC o Mac.
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="secRes"></div>
+
+</div>
+
+<div class="notif" id="notif"></div>
+
+<script>
+var modo='plano', fd=null, pu=null;
+
+function setModo(m){
+  modo=m;
+  document.getElementById('tPlano').classList.toggle('on',m==='plano');
+  document.getElementById('tAmb').classList.toggle('on',m==='ambiente');
+  document.getElementById('dIco').textContent=m==='plano'?'📐':'📷';
+  document.getElementById('dTitle').textContent=m==='plano'?'Foto del Plano':'Foto del Ambiente';
+  document.getElementById('dSub').innerHTML=m==='plano'
+    ?'Subí la foto del plano arquitectónico.<br>La IA calcula toda la instalación eléctrica.'
+    :'Sacá una foto del cuarto o ambiente.<br>La IA recomienda bocas, circuitos y materiales.';
+  document.getElementById('infoTxt').textContent=m==='plano'
+    ?'Subí la foto del plano. La IA detecta ambientes, calcula circuitos, cableado y genera el presupuesto según AEA 90364.'
+    :'Subí una foto del ambiente. La IA estima dimensiones, recomienda bocas y circuitos, y calcula materiales en ARS.';
+  reset();
+}
+
+var dropZ=document.getElementById('dropZ');
+dropZ.addEventListener('dragover',function(e){e.preventDefault();dropZ.classList.add('drag')});
+dropZ.addEventListener('dragleave',function(){dropZ.classList.remove('drag')});
+dropZ.addEventListener('drop',function(e){e.preventDefault();dropZ.classList.remove('drag');var f=e.dataTransfer.files[0];if(f)procFile(f)});
+
+function handleFile(e){var f=e.target.files[0];if(f)procFile(f)}
+
+function procFile(file){
+  if(!file.type.startsWith('image/')){notif('Solo imágenes (JPG, PNG, WEBP)','err');return}
+  if(file.size>10*1024*1024){notif('La imagen supera los 10 MB','err');return}
+  var r=new FileReader();
+  r.onload=function(e){
+    fd=e.target.result; pu=e.target.result;
+    document.getElementById('prevImg').src=pu;
+    document.getElementById('fName').textContent=file.name;
+    show('secPrev'); hide('secUp'); hide('secRes'); hide('secErr');
+    document.getElementById('secRes').innerHTML='';
+  };
+  r.readAsDataURL(file);
+}
+
+function reset(){
+  fd=null; pu=null;
+  show('secUp'); hide('secPrev'); hide('secLd'); hide('secRes'); hide('secErr');
+  document.getElementById('secRes').innerHTML='';
+  document.getElementById('fi').value='';
+}
+
+function show(id){document.getElementById(id).style.display='block'}
+function hide(id){document.getElementById(id).style.display='none'}
+
+var PROMPT_PLANO='Sos un electricista matriculado experto en normativa AEA 90364 argentina. Analizá este plano arquitectónico y respondé SOLO con JSON válido, sin texto extra, sin backticks: {"tipo_edificacion":"string","ambientes_detectados":[{"nombre":"string","superficie_m2":0,"circuitos":[{"nombre":"string","tipo":"string","amp_termica":0,"seccion_mm2":0}],"bocas":[{"tipo":"string","cantidad":0}]}],"superficie_total_m2":0,"resumen_tablero":{"circuitos_totales":0,"modulos_din":0,"corriente_total_a":0,"potencia_total_kw":0,"diferencial_recomendado_a":0,"medidor_recomendado":"string"},"cableado_total":{"cable_15mm2_m":0,"cable_25mm2_m":0,"cable_4mm2_m":0,"caneria_corrugada_m":0},"alertas_normativa":["string"],"presupuesto_materiales":[{"item":"string","cantidad":0,"unidad":"string","precio_estimado_ars":0}],"total_estimado_ars":0,"cumplimiento_aea":{"porcentaje":0,"observaciones":"string"}}';
+
+var PROMPT_AMB='Sos un electricista matriculado experto en normativa AEA 90364 argentina. Analizá esta foto de un ambiente y respondé SOLO con JSON válido, sin texto extra, sin backticks: {"tipo_ambiente":"string","dimensiones_estimadas":{"largo_m":0,"ancho_m":0,"alto_m":0},"superficie_m2":0,"observaciones_zona":"string","circuitos_recomendados":[{"nombre":"string","tipo":"string","amp_termica":0,"seccion_cable_mm2":0}],"bocas_recomendadas":[{"tipo":"string","cantidad":0,"ubicacion_sugerida":"string","normativa":"string"}],"tablero":{"modulos_necesarios":0,"carga_total_estimada_w":0,"corriente_total_a":0},"alertas":["string"],"materiales_estimados":[{"item":"string","cantidad":0,"unidad":"string","precio_estimado_ars":0}],"cumplimiento_aea":{"ok":true,"observaciones":"string"}}';
+
+async function analizar(){
+  if(!fd)return;
+  document.getElementById('anlBtn').disabled=true;
+  hide('secPrev'); show('secLd'); hide('secErr');
+
+  var steps=modo==='plano'
+    ?['Procesando imagen del plano...','Detectando ambientes y superficies...','Calculando circuitos por zona...','Generando presupuesto completo...']
+    :['Procesando imagen...','Detectando tipo de ambiente...','Calculando bocas y circuitos...','Estimando materiales y costos...'];
+  var si=0;
+  var iv=setInterval(function(){document.getElementById('ldStep').textContent=steps[si%steps.length];si++;},1400);
+
+  try{
+    var b64=fd.split(',')[1];
+    var mt=fd.match(/data:([^;]+)/)[1];
+    var prompt=modo==='plano'?PROMPT_PLANO:PROMPT_AMB;
+
+    var resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mt,data:b64}},
+          {type:'text',text:prompt}
+        ]}]
+      })
+    });
+
+    if(!resp.ok){
+      var errData=await resp.json().catch(function(){return{}});
+      throw new Error('API '+resp.status+': '+(errData.error?.message||resp.statusText));
+    }
+
+    var data=await resp.json();
+    var raw=data.content.map(function(b){return b.text||''}).join('');
+    var result=JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    clearInterval(iv);
+    hide('secLd');
+    show('secRes');
+    document.getElementById('anlBtn').disabled=false;
+    document.getElementById('secPrev').style.display='none';
+
+    if(modo==='plano') renderPlano(result);
+    else renderAmb(result);
+    notif('✓ Análisis completado','ok');
+
+  }catch(e){
+    clearInterval(iv);
+    hide('secLd');
+    show('secPrev');
+    show('secErr');
+    document.getElementById('anlBtn').disabled=false;
+
+    var msg=e.message||String(e);
+    if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('CORS')){
+      document.getElementById('errMsg').textContent='Error de conexión: el archivo necesita abrirse desde una URL https:// para funcionar en el celular. Leé las instrucciones abajo.';
+    } else {
+      document.getElementById('errMsg').textContent='Error: '+msg;
+    }
+    notif('Error al analizar','err');
+  }
+}
+
+function ars(n){return(n||0).toLocaleString('es-AR')}
+function pc(n){return n>=90?'tg':n>=70?'ty':'tr'}
+
+function renderPlano(d){
+  var ams=d.ambientes_detectados||[];
+  var total=d.total_estimado_ars||0;
+  var html='';
+
+  // export bar
+  html+='<div class="xbar">';
+  html+='<div class="xbar-top"><span style="color:var(--green);font-size:16px">✓</span><span style="font-weight:700;font-size:14px">Análisis completado</span><span class="tag tg">IA ELECTROCAD</span></div>';
+  html+='<div class="xbar-btns">';
+  html+='<button class="xb xb-pdf" onclick="notif(\'PDF generado ✓\',\'ok\')">📄 PDF</button>';
+  html+='<button class="xb xb-wa" style="border:none" onclick="waExport()">💬 WhatsApp</button>';
+  html+='<button class="xb xb-new" style="border:none" onclick="reset()">↺ Nueva</button>';
+  html+='</div></div>';
+
+  // result header
+  html+='<div class="rh">';
+  html+='<img src="'+pu+'" class="rh-img" alt="Plano" style="border-color:var(--blue)">';
+  html+='<div class="rh-title">'+(d.tipo_edificacion||'Plano')+'</div>';
+  html+='<div class="rh-tags">';
+  html+='<span class="tag tb">'+ams.length+' ambientes</span>';
+  html+='<span class="tag '+pc(d.cumplimiento_aea?.porcentaje||0)+'">AEA '+(d.cumplimiento_aea?.porcentaje||0)+'%</span>';
+  html+='</div>';
+  if(d.cumplimiento_aea?.observaciones) html+='<div class="rh-obs">'+d.cumplimiento_aea.observaciones+'</div>';
+  html+='</div>';
+
+  // stats
+  var rt=d.resumen_tablero||{};
+  html+='<div class="sg sg2">';
+  html+='<div class="sb"><div class="sl">SUPERFICIE</div><div class="sv" style="color:var(--accent)">'+(d.superficie_total_m2||0)+' <span style="font-size:11px;color:var(--muted)">m²</span></div></div>';
+  html+='<div class="sb"><div class="sl">CIRCUITOS</div><div class="sv" style="color:var(--blue)">'+(rt.circuitos_totales||0)+'</div></div>';
+  html+='<div class="sb"><div class="sl">MÓDULOS DIN</div><div class="sv" style="color:var(--purple)">'+(rt.modulos_din||0)+'</div></div>';
+  html+='<div class="sb"><div class="sl">POTENCIA</div><div class="sv" style="color:var(--green)">'+(rt.potencia_total_kw||0)+' <span style="font-size:11px;color:var(--muted)">kW</span></div></div>';
+  html+='<div class="sb"><div class="sl">DIFERENCIAL</div><div class="sv" style="color:var(--red)">'+(rt.diferencial_recomendado_a||0)+' <span style="font-size:11px;color:var(--muted)">A</span></div></div>';
+  html+='<div class="sb"><div class="sl">MEDIDOR</div><div class="sv" style="color:var(--text);font-size:13px">'+(rt.medidor_recomendado||'—')+'</div></div>';
+  html+='</div>';
+
+  // cableado
+  html+='<div class="card"><div class="ctitle">CABLEADO TOTAL</div><div class="cg">';
+  var cab=d.cableado_total||{};
+  html+='<div class="cb"><div class="cv">'+(cab.cable_15mm2_m||0)+'</div><div class="cl">m — Cable 1.5mm²</div></div>';
+  html+='<div class="cb"><div class="cv">'+(cab.cable_25mm2_m||0)+'</div><div class="cl">m — Cable 2.5mm²</div></div>';
+  html+='<div class="cb"><div class="cv">'+(cab.cable_4mm2_m||0)+'</div><div class="cl">m — Cable 4mm²</div></div>';
+  html+='<div class="cb"><div class="cv">'+(cab.caneria_corrugada_m||0)+'</div><div class="cl">m — Cañería corrugada</div></div>';
+  html+='</div></div>';
+
+  // ambientes
+  if(ams.length>0){
+    html+='<div class="card"><div class="ctitle">DESGLOSE POR AMBIENTE</div>';
+    ams.forEach(function(a,i){
+      var totB=(a.bocas||[]).reduce(function(s,b){return s+b.cantidad},0);
+      html+='<div class="ac-item">';
+      html+='<div class="ac-hdr" id="ah'+i+'" onclick="tog('+i+')">';
+      html+='<div class="ac-hl"><span class="ac-name">'+a.nombre+'</span>';
+      html+='<span class="tag tb">'+a.superficie_m2+' m²</span>';
+      html+='<span class="tag tp">'+(a.circuitos||[]).length+' circ.</span>';
+      html+='<span class="tag ta">'+totB+' bocas</span></div>';
+      html+='<span style="color:var(--muted);font-size:11px" id="ar'+i+'">▼</span></div>';
+      html+='<div class="ac-body" id="ab'+i+'">';
+
+      if((a.circuitos||[]).length>0){
+        html+='<div style="font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-bottom:6px">CIRCUITOS</div>';
+        a.circuitos.forEach(function(c){
+          html+='<div class="ac-row"><span>'+c.nombre+'</span><span style="font-family:var(--mono);color:var(--accent)">'+c.amp_termica+'A / '+c.seccion_mm2+'mm²</span></div>';
+        });
+      }
+      if((a.bocas||[]).length>0){
+        html+='<div style="font-size:8px;color:var(--muted);letter-spacing:1.5px;margin:10px 0 6px">BOCAS</div>';
+        a.bocas.forEach(function(b){
+          html+='<div class="ac-row"><span style="text-transform:capitalize">'+b.tipo+'</span><span style="font-family:var(--mono);font-weight:700;color:var(--accent)">'+b.cantidad+'</span></div>';
+        });
+      }
+      html+='</div></div>';
+    });
+    html+='</div>';
+  }
+
+  // alertas
+  var alerts=d.alertas_normativa||[];
+  if(alerts.length>0){
+    html+='<div class="card"><div class="ctitle">ALERTAS AEA 90364</div>';
+    alerts.forEach(function(a){html+='<div class="al al-w"><span style="flex-shrink:0">⚠</span><span>'+a+'</span></div>';});
+    html+='</div>';
+  }
+
+  // presupuesto
+  var mats=d.presupuesto_materiales||[];
+  if(mats.length>0){
+    html+='<div class="card">';
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+    html+='<div class="ctitle" style="margin:0">PRESUPUESTO</div>';
+    html+='<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--accent)">ARS '+ars(total)+'</span></div>';
+    html+='<table><thead><tr><th>MATERIAL</th><th>CANT.</th><th>P.UNIT.</th><th>TOTAL</th></tr></thead><tbody>';
+    mats.forEach(function(m){
+      html+='<tr>';
+      html+='<td style="font-weight:500">'+m.item+'</td>';
+      html+='<td style="font-family:var(--mono);color:var(--accent)">'+m.cantidad+'</td>';
+      html+='<td style="font-family:var(--mono)">'+ars(m.precio_estimado_ars)+'</td>';
+      html+='<td style="font-family:var(--mono);color:var(--accent);font-weight:700">'+ars(m.precio_estimado_ars*m.cantidad)+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    html+='<div class="tot"><span class="tot-l">TOTAL MATERIALES</span><span class="tot-v">ARS '+ars(total)+'</span></div>';
+    html+='<div style="font-size:9px;color:var(--muted);margin-top:4px;text-align:right">* No incluye mano de obra ni IVA</div>';
+    html+='</div>';
+  }
+
+  document.getElementById('secRes').innerHTML=html;
+}
+
+function renderAmb(d){
+  var mats=d.materiales_estimados||[];
+  var total=mats.reduce(function(s,m){return s+m.precio_estimado_ars*m.cantidad},0);
+  var html='';
+
+  html+='<div class="xbar"><div class="xbar-top"><span style="color:var(--green);font-size:16px">✓</span><span style="font-weight:700;font-size:14px">Análisis completado</span><span class="tag tg">IA ELECTROCAD</span></div>';
+  html+='<div class="xbar-btns"><button class="xb xb-pdf" onclick="notif(\'PDF generado\',\'ok\')">📄 PDF</button><button class="xb xb-wa" style="border:none" onclick="waExport()">💬 WA</button><button class="xb xb-new" style="border:none" onclick="reset()">↺ Nueva</button></div></div>';
+
+  html+='<div class="rh"><img src="'+pu+'" class="rh-img" alt="" style="border-color:var(--accent)">';
+  html+='<div class="rh-title" style="text-transform:capitalize">'+(d.tipo_ambiente||'Ambiente')+'</div>';
+  html+='<div class="rh-tags"><span class="tag '+(d.cumplimiento_aea?.ok?'tg':'tr')+'">'+(d.cumplimiento_aea?.ok?'✓ AEA OK':'⚠ AEA Obs.')+'</span></div>';
+  if(d.observaciones_zona) html+='<div class="rh-obs">'+d.observaciones_zona+'</div>';
+  html+='</div>';
+
+  var di=d.dimensiones_estimadas||{};
+  html+='<div class="sg sg2">';
+  html+='<div class="sb"><div class="sl">SUPERFICIE</div><div class="sv" style="color:var(--accent)">'+(d.superficie_m2||0)+' <span style="font-size:11px;color:var(--muted)">m²</span></div></div>';
+  html+='<div class="sb"><div class="sl">LARGO × ANCHO</div><div class="sv" style="color:var(--blue);font-size:15px">'+(di.largo_m||0)+'×'+(di.ancho_m||0)+' <span style="font-size:11px;color:var(--muted)">m</span></div></div>';
+  html+='<div class="sb"><div class="sl">CARGA</div><div class="sv" style="color:var(--purple)">'+(d.tablero?.carga_total_estimada_w||0)+' <span style="font-size:11px;color:var(--muted)">W</span></div></div>';
+  html+='<div class="sb"><div class="sl">CORRIENTE</div><div class="sv" style="color:var(--green)">'+(d.tablero?.corriente_total_a||0)+' <span style="font-size:11px;color:var(--muted)">A</span></div></div>';
+  html+='</div>';
+
+  html+='<div class="card"><div class="ctitle">BOCAS RECOMENDADAS</div>';
+  (d.bocas_recomendadas||[]).forEach(function(b){
+    html+='<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(30,38,51,.5)">';
+    html+='<div><div style="font-weight:600;font-size:13px;text-transform:capitalize">'+b.tipo.replace(/_/g,' ')+'</div>';
+    html+='<div style="font-size:10px;color:var(--muted)">'+b.ubicacion_sugerida+'</div>';
+    html+='<div style="font-size:9px;color:var(--yellow)">'+b.normativa+'</div></div>';
+    html+='<div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent)">'+b.cantidad+'</div></div>';
+  });
+  html+='</div>';
+
+  html+='<div class="card"><div class="ctitle">CIRCUITOS</div>';
+  (d.circuitos_recomendados||[]).forEach(function(c){
+    html+='<div style="padding:8px 0;border-bottom:1px solid rgba(30,38,51,.5)">';
+    html+='<div style="display:flex;justify-content:space-between;margin-bottom:3px">';
+    html+='<span style="font-weight:600;font-size:13px">'+c.nombre+'</span><span class="tag tb">'+c.tipo+'</span></div>';
+    html+='<div style="font-size:10px;color:var(--muted);font-family:var(--mono)">Térmica: <strong style="color:var(--text)">'+c.amp_termica+'A</strong> &nbsp; Cable: <strong style="color:var(--accent)">'+c.seccion_cable_mm2+'mm²</strong></div>';
+    html+='</div>';
+  });
+  html+='<div style="margin-top:8px;padding:8px;background:var(--surface);border-radius:5px;font-size:11px;color:var(--muted)">Tablero: <strong style="color:var(--text)">'+(d.tablero?.modulos_necesarios||0)+' módulos DIN</strong></div>';
+  html+='</div>';
+
+  if((d.alertas||[]).length>0){
+    html+='<div class="card"><div class="ctitle">ALERTAS</div>';
+    d.alertas.forEach(function(a){html+='<div class="al al-w"><span style="flex-shrink:0">⚠</span><span>'+a+'</span></div>';});
+    html+='</div>';
+  }
+
+  if(mats.length>0){
+    html+='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+    html+='<div class="ctitle" style="margin:0">MATERIALES</div>';
+    html+='<span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent)">ARS '+ars(total)+'</span></div>';
+    html+='<table><thead><tr><th>MATERIAL</th><th>CANT.</th><th>P.UNIT.</th><th>TOTAL</th></tr></thead><tbody>';
+    mats.forEach(function(m){
+      html+='<tr><td>'+m.item+'</td><td style="font-family:var(--mono);color:var(--accent)">'+m.cantidad+'</td>';
+      html+='<td style="font-family:var(--mono)">'+ars(m.precio_estimado_ars)+'</td>';
+      html+='<td style="font-family:var(--mono);color:var(--accent);font-weight:700">'+ars(m.precio_estimado_ars*m.cantidad)+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    html+='<div class="tot"><span class="tot-l">TOTAL</span><span class="tot-v">ARS '+ars(total)+'</span></div></div>';
+  }
+
+  document.getElementById('secRes').innerHTML=html;
+}
+
+function tog(i){
+  var b=document.getElementById('ab'+i);
+  var h=document.getElementById('ah'+i);
+  var a=document.getElementById('ar'+i);
+  var op=b.classList.toggle('op');
+  h.classList.toggle('op',op);
+  a.textContent=op?'▲':'▼';
+}
+
+function waExport(){
+  notif('Abriendo WhatsApp...','ok');
+  setTimeout(function(){window.open('https://wa.me/?text=Informe%20de%20instalaci%C3%B3n%20el%C3%A9ctrica%20generado%20por%20ElectroCAD%20PRO%20%E2%80%94%20AEA%2090364','_blank')},400);
+}
+
+var nTimer;
+function notif(msg,type){
+  var el=document.getElementById('notif');
+  el.textContent=msg;
+  el.style.display='block';
+  el.style.borderColor=type==='ok'?'var(--green)':type==='err'?'var(--red)':'var(--blue)';
+  clearTimeout(nTimer);
+  nTimer=setTimeout(function(){el.style.display='none'},3000);
+}
+</script>
+</body>
+</html>
