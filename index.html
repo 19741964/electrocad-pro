@@ -14,16 +14,22 @@ body{background:#0A0C0F;color:#E2E8F0;font-family:'Rajdhani',sans-serif;min-heig
   color:#000;margin:0 auto 20px;box-shadow:0 0 30px rgba(245,166,35,.4)}
 h1{font-size:26px;font-weight:700;letter-spacing:1px;text-align:center;margin-bottom:6px}
 .sub{font-size:11px;color:#64748B;letter-spacing:2px;font-family:'Courier New',monospace;text-align:center;margin-bottom:36px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;width:100%;max-width:700px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;width:100%;max-width:860px}
 .card{background:#161B22;border:1px solid #1E2633;border-radius:10px;padding:20px;
   text-decoration:none;color:#E2E8F0;transition:all .2s;display:block}
 .card:hover{border-color:#F5A623;background:#1a2030;transform:translateY(-2px)}
+.card.featured{border-color:#F5A623;background:linear-gradient(135deg,#1a2030,#161B22)}
 .card-icon{font-size:28px;margin-bottom:10px}
 .card-title{font-size:16px;font-weight:700;margin-bottom:6px}
 .card-desc{font-size:12px;color:#64748B;line-height:1.5}
 .card-tag{display:inline-block;padding:2px 8px;border-radius:3px;font-size:9px;
   font-weight:700;margin-top:10px;background:rgba(245,166,35,.15);color:#F5A623;
   border:1px solid rgba(245,166,35,.3)}
+.card-tag.green{background:rgba(34,197,94,.15);color:#22C55E;border-color:rgba(34,197,94,.3)}
+.card-tag.purple{background:rgba(168,85,247,.15);color:#A855F7;border-color:rgba(168,85,247,.3)}
+.divider{width:100%;max-width:860px;height:1px;background:#1E2633;margin:20px 0}
+.section-label{font-size:10px;color:#64748B;letter-spacing:2px;font-weight:700;
+  text-align:center;margin-bottom:16px;text-transform:uppercase}
 .footer{margin-top:32px;font-size:10px;color:#374151;letter-spacing:1px;text-align:center}
 </style>
 </head>
@@ -32,32 +38,45 @@ h1{font-size:26px;font-weight:700;letter-spacing:1px;text-align:center;margin-bo
 <h1>ElectroCAD PRO</h1>
 <p class="sub">SOFTWARE PARA ELECTRICISTAS PROFESIONALES · AEA 90364 · ARGENTINA</p>
 
+<div class="section-label">Aplicación Principal</div>
+<div class="grid" style="max-width:440px;margin-bottom:0">
+  <a class="card featured" href="electrocad-app.html">
+    <div class="card-icon">⚡</div>
+    <div class="card-title">ElectroCAD PRO — App Completa</div>
+    <div class="card-desc">Login · Panel Admin · Plano Virtual · Análisis IA · Simulador DIN · Cálculos AEA · Solar FV · Corrientes Débiles · Presupuesto PDF.</div>
+    <span class="card-tag green">ACCESO CON LOGIN</span>
+  </a>
+</div>
+
+<div class="divider"></div>
+<div class="section-label">Herramientas individuales</div>
+
 <div class="grid">
   <a class="card" href="test-ia-plano.html">
     <div class="card-icon">🤖</div>
-    <div class="card-title">Análisis IA — Plano / Ambiente</div>
-    <div class="card-desc">Subí una foto de un plano arquitectónico o de un ambiente y la IA calcula toda la instalación eléctrica, materiales y presupuesto según AEA 90364.</div>
+    <div class="card-title">Análisis IA — Desktop</div>
+    <div class="card-desc">Subí una foto de un plano o ambiente y la IA calcula toda la instalación eléctrica según AEA 90364.</div>
     <span class="card-tag">CLAUDE AI VISION</span>
   </a>
 
   <a class="card" href="electrocad-ia-mobile.html">
     <div class="card-icon">📱</div>
-    <div class="card-title">Análisis IA — Versión Mobile</div>
-    <div class="card-desc">Versión optimizada para celular. Subí fotos desde tu galería. Mismo análisis completo con IA para planos y ambientes.</div>
+    <div class="card-title">Análisis IA — Mobile</div>
+    <div class="card-desc">Versión optimizada para celular. Subí fotos desde tu galería para análisis automático.</div>
     <span class="card-tag">OPTIMIZADO CELULAR</span>
   </a>
 
   <a class="card" href="planta-alta-diagrama.html">
     <div class="card-icon">📐</div>
-    <div class="card-title">Diagrama Planta Alta — 4 Dormitorios</div>
-    <div class="card-desc">Instalación eléctrica completa de la planta alta con 4 dormitorios y 2 baños. Tablero DIN, plano 2D con simbología, cómputo y resumen AEA.</div>
+    <div class="card-title">Diagrama Planta Alta</div>
+    <div class="card-desc">4 dormitorios · 2 baños · Tablero DIN · Plano 2D · Cómputo de materiales.</div>
     <span class="card-tag">13 CIRCUITOS</span>
   </a>
 
   <a class="card" href="pb-2unidades-diagrama.html">
     <div class="card-icon">🏢</div>
     <div class="card-title">Diagrama PB — 2 Unidades</div>
-    <div class="card-desc">Planta baja esquina R. Rojas / M. Strobel. Dos unidades independientes con tableros, medidores y circuitos separados.</div>
+    <div class="card-desc">Planta baja R. Rojas / M. Strobel. Dos tableros y medidores independientes.</div>
     <span class="card-tag">18 CIRCUITOS · 2 MEDIDORES</span>
   </a>
 </div>
