@@ -1,0 +1,2733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElectroCAD PRO — Software para Electricistas</title>
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// React loaded from CDN
+
+// ============================================================
+// ELECTROCAD PRO — VERSIÓN FINAL COMPLETA
+// Auth + Admin + Usuarios + Todos los módulos + IA Claude API
+// ============================================================
+
+
+// ============================================================
+// ELECTROCAD PRO — APLICACIÓN COMPLETA FUSIONADA
+// App + Módulo IA (Claude Vision) integrados
+// ============================================================
+
+const DS = {
+  bg: "#0A0C0F", surface: "#111418", panel: "#161B22", border: "#1E2633",
+  accent: "#F5A623", accentDim: "#C47D0E", blue: "#2B8FE8", green: "#22C55E",
+  red: "#EF4444", yellow: "#EAB308", purple: "#A855F7",
+  text: "#E2E8F0", muted: "#64748B",
+  font: "'Rajdhani', sans-serif", mono: "'JetBrains Mono', monospace",
+};
+
+// ── DATA ────────────────────────────────────────────────────
+const CABLES = [
+  { seccion: "1.5 mm²", amp_max: 15, uso: "Iluminación, bocas de luz" },
+  { seccion: "2.5 mm²", amp_max: 20, uso: "Tomacorrientes generales" },
+  { seccion: "4 mm²",   amp_max: 25, uso: "Circuitos de aire / lavarropas" },
+  { seccion: "6 mm²",   amp_max: 32, uso: "Termotanque, circuito especial" },
+  { seccion: "10 mm²",  amp_max: 40, uso: "Tablero secundario / cocina eléc." },
+  { seccion: "16 mm²",  amp_max: 63, uso: "Acometida / tablero principal" },
+  { seccion: "25 mm²",  amp_max: 80, uso: "Industria / alimentador" },
+  { seccion: "35 mm²",  amp_max: 100,uso: "Gran industria / generador" },
+];
+const TERMICAS = [6,10,16,20,25,32,40,50,63,80,100];
+const ELEMENTOS_PLANO = [
+  { id:"toma",       label:"Tomacorriente",   icon:"⬡", color:"#2B8FE8", w:40, h:40 },
+  { id:"luz",        label:"Boca de luz",      icon:"◯", color:"#F5A623", w:36, h:36 },
+  { id:"interruptor",label:"Interruptor",      icon:"⧉", color:"#22C55E", w:36, h:36 },
+  { id:"tablero",    label:"Tablero",          icon:"▣", color:"#EF4444", w:50, h:60 },
+  { id:"camara",     label:"Cámara CCTV",      icon:"◉", color:"#A855F7", w:40, h:30 },
+  { id:"alarma",     label:"Alarma/Detector",  icon:"⚠", color:"#F97316", w:36, h:36 },
+  { id:"solar",      label:"Panel Solar",      icon:"⬛", color:"#06B6D4", w:60, h:40 },
+  { id:"medidor",    label:"Medidor",          icon:"◈", color:"#84CC16", w:40, h:50 },
+];
+const MATERIALES_BASE = [
+  { nombre:"Cable 2.5mm² (por metro)", precio:850 },
+  { nombre:"Cable 1.5mm² (por metro)", precio:620 },
+  { nombre:"Cable 4mm² (por metro)",   precio:1350 },
+  { nombre:"Tomacorriente doble",      precio:2800 },
+  { nombre:"Boca de luz",              precio:1200 },
+  { nombre:"Interruptor simple",       precio:1800 },
+  { nombre:"Térmica 16A",              precio:4500 },
+  { nombre:"Térmica 20A",              precio:5200 },
+  { nombre:"Disyuntor diferencial 25A",precio:12000 },
+  { nombre:"Caja tablero 12 módulos",  precio:8500 },
+  { nombre:"Cañería corrugada 20mm (m)",precio:380 },
+  { nombre:"Caja de pase",             precio:650 },
+];
+
+// ── IA PROMPTS ───────────────────────────────────────────────
+const PROMPT_AMBIENTE = `Sos un electricista matriculado experto en normativa AEA 90364 argentina.
+Analizá esta foto de un ambiente/habitación y respondé SOLO con JSON válido, sin texto extra, sin backticks:
+{"tipo_ambiente":"string","dimensiones_estimadas":{"largo_m":0,"ancho_m":0,"alto_m":0},"superficie_m2":0,"observaciones_zona":"string","circuitos_recomendados":[{"nombre":"string","tipo":"iluminacion|tomas|especial","amp_termica":0,"seccion_cable_mm2":0}],"bocas_recomendadas":[{"tipo":"tomacorriente|luz|interruptor|toma_especial","cantidad":0,"ubicacion_sugerida":"string","normativa":"string"}],"tablero":{"modulos_necesarios":0,"carga_total_estimada_w":0,"corriente_total_a":0},"alertas":["string"],"materiales_estimados":[{"item":"string","cantidad":0,"unidad":"string","precio_estimado_ars":0}],"cumplimiento_aea":{"ok":true,"observaciones":"string"}}`;
+
+const PROMPT_PLANO = `Sos un electricista matriculado experto en normativa AEA 90364 argentina.
+Analizá este plano arquitectónico y respondé SOLO con JSON válido, sin texto extra, sin backticks:
+{"tipo_edificacion":"string","ambientes_detectados":[{"nombre":"string","superficie_m2":0,"circuitos":[{"nombre":"string","tipo":"string","amp_termica":0,"seccion_mm2":0}],"bocas":[{"tipo":"string","cantidad":0}]}],"superficie_total_m2":0,"resumen_tablero":{"circuitos_totales":0,"modulos_din":0,"corriente_total_a":0,"potencia_total_kw":0,"diferencial_recomendado_a":0,"medidor_recomendado":"string"},"cableado_total":{"cable_15mm2_m":0,"cable_25mm2_m":0,"cable_4mm2_m":0,"caneria_corrugada_m":0},"alertas_normativa":["string"],"presupuesto_materiales":[{"item":"string","cantidad":0,"unidad":"string","precio_estimado_ars":0}],"total_estimado_ars":0,"cumplimiento_aea":{"porcentaje":0,"observaciones":"string"}}`;
+
+async function analizarConClaude(imageBase64, mediaType, modo) {
+  const prompt = modo === "ambiente" ? PROMPT_AMBIENTE : PROMPT_PLANO;
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514", max_tokens: 1000,
+      messages: [{ role: "user", content: [
+        { type: "image", source: { type: "base64", media_type: mediaType, data: imageBase64 } },
+        { type: "text", text: prompt }
+      ]}]
+    })
+  });
+  if (!response.ok) throw new Error(`API Error: ${response.status}`);
+  const data = await response.json();
+  const raw = data.content.map(b => b.text || "").join("");
+  return JSON.parse(raw.replace(/```json|```/g, "").trim());
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(",")[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ── SHARED UI ────────────────────────────────────────────────
+function IaTag({ children, color = DS.blue }) {
+  return <span style={{ background:`${color}22`, color, border:`1px solid ${color}44`,
+    padding:"2px 8px", borderRadius:3, fontSize:10, fontWeight:700, letterSpacing:0.5 }}>{children}</span>;
+}
+function StatBox({ label, value, color = DS.accent, unit = "" }) {
+  return (
+    <div style={{ background:DS.surface, border:`1px solid ${DS.border}`, borderRadius:8, padding:"14px 16px" }}>
+      <div style={{ fontSize:10, color:DS.muted, letterSpacing:2, marginBottom:6, fontWeight:600 }}>{label}</div>
+      <div style={{ fontFamily:DS.mono, fontSize:24, fontWeight:700, color }}>{value}<span style={{ fontSize:12, color:DS.muted, marginLeft:4 }}>{unit}</span></div>
+    </div>
+  );
+}
+function IaAlert({ msg, type="warn" }) {
+  const colors = { warn:DS.yellow, err:DS.red, ok:DS.green, info:DS.blue };
+  const icons  = { warn:"⚠", err:"✕", ok:"✓", info:"ℹ" };
+  const c = colors[type];
+  return (
+    <div style={{ background:`${c}11`, border:`1px solid ${c}33`, borderRadius:6,
+      padding:"10px 14px", display:"flex", gap:10, alignItems:"flex-start", marginBottom:8 }}>
+      <span style={{ color:c, fontWeight:700, flexShrink:0 }}>{icons[type]}</span>
+      <span style={{ fontSize:13, color:DS.text }}>{msg}</span>
+    </div>
+  );
+}
+
+// ── IA: RESULTADO AMBIENTE ───────────────────────────────────
+function ResultadoAmbiente({ data, imagen }) {
+  const total = data.materiales_estimados?.reduce((s,m) => s + m.precio_estimado_ars * m.cantidad, 0) || 0;
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ background:`linear-gradient(135deg,${DS.panel},${DS.surface})`, border:`1px solid ${DS.border}`,
+        borderRadius:10, padding:18, display:"flex", alignItems:"center", gap:18 }}>
+        <img src={imagen} alt="" style={{ width:110, height:75, objectFit:"cover", borderRadius:6, border:`2px solid ${DS.accent}` }} />
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:6 }}>
+            <span style={{ fontSize:20, fontWeight:700, textTransform:"capitalize" }}>{data.tipo_ambiente}</span>
+            <IaTag color={data.cumplimiento_aea?.ok ? DS.green : DS.red}>
+              {data.cumplimiento_aea?.ok ? "✓ AEA OK" : "⚠ AEA OBS."}
+            </IaTag>
+          </div>
+          <div style={{ fontSize:12, color:DS.muted }}>{data.observaciones_zona}</div>
+          {data.cumplimiento_aea?.observaciones && <div style={{ fontSize:11, color:DS.yellow, marginTop:4 }}>{data.cumplimiento_aea.observaciones}</div>}
+        </div>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+        <StatBox label="SUPERFICIE" value={data.superficie_m2} unit="m²" />
+        <StatBox label="LARGO×ANCHO" value={`${data.dimensiones_estimadas?.largo_m}×${data.dimensiones_estimadas?.ancho_m}`} unit="m" color={DS.blue} />
+        <StatBox label="CARGA" value={data.tablero?.carga_total_estimada_w||"—"} unit="W" color={DS.purple} />
+        <StatBox label="CORRIENTE" value={data.tablero?.corriente_total_a||"—"} unit="A" color={DS.green} />
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+        <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:10 }}>BOCAS RECOMENDADAS</div>
+          {data.bocas_recomendadas?.map((b,i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:`1px solid ${DS.border}30` }}>
+              <div>
+                <div style={{ fontWeight:600, fontSize:13, textTransform:"capitalize" }}>{b.tipo.replace(/_/g," ")}</div>
+                <div style={{ fontSize:10, color:DS.muted }}>{b.ubicacion_sugerida}</div>
+                <div style={{ fontSize:9, color:DS.yellow }}>{b.normativa}</div>
+              </div>
+              <div style={{ fontFamily:DS.mono, fontSize:20, fontWeight:700, color:DS.accent }}>{b.cantidad}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:10 }}>CIRCUITOS</div>
+          {data.circuitos_recomendados?.map((c,i) => (
+            <div key={i} style={{ padding:"8px 0", borderBottom:`1px solid ${DS.border}30` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                <span style={{ fontWeight:600, fontSize:13 }}>{c.nombre}</span>
+                <IaTag color={c.tipo==="especial"?DS.purple:c.tipo==="iluminacion"?DS.accent:DS.blue}>{c.tipo}</IaTag>
+              </div>
+              <div style={{ fontSize:11, color:DS.muted, fontFamily:DS.mono }}>
+                Térmica: <strong style={{ color:DS.text }}>{c.amp_termica}A</strong>
+                &nbsp;&nbsp;Cable: <strong style={{ color:DS.accent }}>{c.seccion_cable_mm2}mm²</strong>
+              </div>
+            </div>
+          ))}
+          <div style={{ marginTop:10, padding:"8px 10px", background:DS.surface, borderRadius:5 }}>
+            <span style={{ fontSize:11, color:DS.muted }}>Tablero: <strong style={{ color:DS.text }}>{data.tablero?.modulos_necesarios} módulos DIN</strong></span>
+          </div>
+        </div>
+      </div>
+      {data.alertas?.length > 0 && (
+        <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:10 }}>ALERTAS</div>
+          {data.alertas.map((a,i) => <IaAlert key={i} msg={a} />)}
+        </div>
+      )}
+      <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted }}>CÓMPUTO DE MATERIALES</div>
+          <span style={{ fontFamily:DS.mono, color:DS.accent, fontWeight:700 }}>ARS {total.toLocaleString("es-AR")}</span>
+        </div>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead><tr>{["MATERIAL","CANT.","UNIDAD","P.UNIT.","SUBTOTAL"].map(h =>
+            <th key={h} style={{ padding:"5px 8px", textAlign:"left", fontSize:9, letterSpacing:1.5,
+              color:DS.muted, borderBottom:`1px solid ${DS.border}`, fontWeight:600 }}>{h}</th>)}</tr></thead>
+          <tbody>{data.materiales_estimados?.map((m,i) => (
+            <tr key={i} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+              <td style={{ padding:"7px 8px", fontWeight:500 }}>{m.item}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono, color:DS.accent }}>{m.cantidad}</td>
+              <td style={{ padding:"7px 8px", color:DS.muted }}>{m.unidad}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono }}>ARS {m.precio_estimado_ars?.toLocaleString("es-AR")}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono, color:DS.accent, fontWeight:700 }}>ARS {(m.precio_estimado_ars*m.cantidad).toLocaleString("es-AR")}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── IA: RESULTADO PLANO ──────────────────────────────────────
+function ResultadoPlano({ data, imagen }) {
+  const [open, setOpen] = useState(null);
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ background:`linear-gradient(135deg,${DS.panel},${DS.surface})`, border:`1px solid ${DS.border}`,
+        borderRadius:10, padding:18, display:"flex", gap:18, alignItems:"center" }}>
+        <img src={imagen} alt="" style={{ width:130, height:85, objectFit:"cover", borderRadius:6, border:`2px solid ${DS.blue}` }} />
+        <div style={{ flex:1 }}>
+          <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:6 }}>
+            <span style={{ fontSize:20, fontWeight:700 }}>{data.tipo_edificacion}</span>
+            <IaTag color={DS.blue}>{data.ambientes_detectados?.length} AMBIENTES</IaTag>
+            <IaTag color={data.cumplimiento_aea?.porcentaje>=90?DS.green:DS.yellow}>AEA {data.cumplimiento_aea?.porcentaje}%</IaTag>
+          </div>
+          <div style={{ fontSize:12, color:DS.muted }}>{data.cumplimiento_aea?.observaciones}</div>
+        </div>
+      </div>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:10 }}>
+        <StatBox label="SUPERFICIE" value={data.superficie_total_m2} unit="m²" />
+        <StatBox label="CIRCUITOS" value={data.resumen_tablero?.circuitos_totales} color={DS.blue} />
+        <StatBox label="MÓDULOS DIN" value={data.resumen_tablero?.modulos_din} color={DS.purple} />
+        <StatBox label="POTENCIA" value={data.resumen_tablero?.potencia_total_kw} unit="kW" color={DS.green} />
+        <StatBox label="DIFERENCIAL" value={data.resumen_tablero?.diferencial_recomendado_a} unit="A" color={DS.red} />
+      </div>
+      <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:12 }}>TABLERO GENERAL</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
+          {[{l:"Corriente total",v:`${data.resumen_tablero?.corriente_total_a} A`,c:DS.accent},
+            {l:"Medidor",v:data.resumen_tablero?.medidor_recomendado,c:DS.blue},
+            {l:"Diferencial",v:`${data.resumen_tablero?.diferencial_recomendado_a} A`,c:DS.red}].map(s => (
+            <div key={s.l} style={{ background:DS.surface, borderRadius:6, padding:"10px 12px" }}>
+              <div style={{ fontSize:10, color:DS.muted, marginBottom:3 }}>{s.l}</div>
+              <div style={{ fontFamily:DS.mono, fontSize:15, fontWeight:700, color:s.c }}>{s.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:12 }}>CABLEADO TOTAL ESTIMADO</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10 }}>
+          {[{l:"Cable 1.5mm²",v:data.cableado_total?.cable_15mm2_m},
+            {l:"Cable 2.5mm²",v:data.cableado_total?.cable_25mm2_m},
+            {l:"Cable 4mm²",v:data.cableado_total?.cable_4mm2_m},
+            {l:"Cañería",v:data.cableado_total?.caneria_corrugada_m}].map(c => (
+            <div key={c.l} style={{ background:DS.surface, borderRadius:6, padding:"10px", textAlign:"center" }}>
+              <div style={{ fontFamily:DS.mono, fontSize:22, fontWeight:700, color:DS.accent }}>{c.v}</div>
+              <div style={{ fontSize:9, color:DS.muted, marginTop:2 }}>m — {c.l}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:12 }}>DESGLOSE POR AMBIENTE</div>
+        {data.ambientes_detectados?.map((amb,i) => (
+          <div key={i} style={{ marginBottom:6 }}>
+            <div onClick={() => setOpen(open===i?null:i)} style={{ display:"flex", justifyContent:"space-between",
+              alignItems:"center", padding:"10px 12px", background:DS.surface, cursor:"pointer",
+              borderRadius:open===i?"6px 6px 0 0":6, border:`1px solid ${open===i?DS.accent:DS.border}` }}>
+              <div style={{ display:"flex", gap:10, alignItems:"center" }}>
+                <span style={{ fontWeight:700 }}>{amb.nombre}</span>
+                <IaTag color={DS.blue}>{amb.superficie_m2} m²</IaTag>
+                <IaTag color={DS.purple}>{amb.circuitos?.length} circ.</IaTag>
+              </div>
+              <span style={{ color:DS.muted, fontSize:12 }}>{open===i?"▲":"▼"}</span>
+            </div>
+            {open===i && (
+              <div style={{ background:`${DS.surface}88`, border:`1px solid ${DS.accent}`,
+                borderTop:"none", borderRadius:"0 0 6px 6px", padding:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div>
+                    <div style={{ fontSize:9, color:DS.muted, marginBottom:6 }}>CIRCUITOS</div>
+                    {amb.circuitos?.map((c,j) => (
+                      <div key={j} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0",
+                        borderBottom:`1px solid ${DS.border}22`, fontSize:12 }}>
+                        <span>{c.nombre}</span>
+                        <span style={{ fontFamily:DS.mono, color:DS.accent }}>{c.amp_termica}A/{c.seccion_mm2}mm²</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <div style={{ fontSize:9, color:DS.muted, marginBottom:6 }}>BOCAS</div>
+                    {amb.bocas?.map((b,j) => (
+                      <div key={j} style={{ display:"flex", justifyContent:"space-between", padding:"5px 0",
+                        borderBottom:`1px solid ${DS.border}22`, fontSize:12 }}>
+                        <span style={{ textTransform:"capitalize" }}>{b.tipo}</span>
+                        <span style={{ fontFamily:DS.mono, fontWeight:700, color:DS.accent }}>{b.cantidad}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {data.alertas_normativa?.length > 0 && (
+        <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted, marginBottom:10 }}>ALERTAS AEA 90364</div>
+          {data.alertas_normativa.map((a,i) => <IaAlert key={i} msg={a} />)}
+        </div>
+      )}
+      <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8, padding:14 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+          <div style={{ fontSize:10, fontWeight:700, letterSpacing:2, color:DS.muted }}>PRESUPUESTO DE MATERIALES</div>
+          <div style={{ fontFamily:DS.mono, fontSize:18, fontWeight:700, color:DS.accent }}>ARS {data.total_estimado_ars?.toLocaleString("es-AR")}</div>
+        </div>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+          <thead><tr>{["MATERIAL","CANT.","UNIDAD","P.UNIT.","SUBTOTAL"].map(h =>
+            <th key={h} style={{ padding:"5px 8px", textAlign:"left", fontSize:9, letterSpacing:1.5,
+              color:DS.muted, borderBottom:`1px solid ${DS.border}`, fontWeight:600 }}>{h}</th>)}</tr></thead>
+          <tbody>{data.presupuesto_materiales?.map((m,i) => (
+            <tr key={i} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+              <td style={{ padding:"7px 8px", fontWeight:500 }}>{m.item}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono, color:DS.accent }}>{m.cantidad}</td>
+              <td style={{ padding:"7px 8px", color:DS.muted }}>{m.unidad}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono }}>ARS {m.precio_estimado_ars?.toLocaleString("es-AR")}</td>
+              <td style={{ padding:"7px 8px", fontFamily:DS.mono, color:DS.accent, fontWeight:700 }}>ARS {(m.precio_estimado_ars*m.cantidad).toLocaleString("es-AR")}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── IA: UPLOAD ZONE ──────────────────────────────────────────
+function UploadZone({ onFile, modo }) {
+  const ref = useRef();
+  const [drag, setDrag] = useState(false);
+  const handleDrop = useCallback(e => { e.preventDefault(); setDrag(false); const f=e.dataTransfer.files[0]; if(f&&f.type.startsWith("image/")) onFile(f); }, [onFile]);
+  return (
+    <div onDragOver={e=>{e.preventDefault();setDrag(true);}} onDragLeave={()=>setDrag(false)}
+      onDrop={handleDrop} onClick={()=>ref.current.click()}
+      style={{ border:`2px dashed ${drag?DS.accent:DS.border}`, borderRadius:12, padding:"36px 20px",
+        textAlign:"center", cursor:"pointer", background:drag?`${DS.accent}08`:"transparent", transition:"all 0.2s" }}>
+      <input ref={ref} type="file" accept="image/*" style={{ display:"none" }} onChange={e=>e.target.files[0]&&onFile(e.target.files[0])} />
+      <div style={{ fontSize:36, marginBottom:10 }}>{modo==="ambiente"?"📷":"📐"}</div>
+      <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>{modo==="ambiente"?"Foto del Ambiente":"Foto del Plano Arquitectónico"}</div>
+      <div style={{ fontSize:12, color:DS.muted, marginBottom:14 }}>{modo==="ambiente"?"Sacá una foto del cuarto o espacio a electrificar":"Subí una foto del plano (papel o digital)"}</div>
+      <div style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"7px 18px",
+        background:DS.accent, color:"#000", borderRadius:6, fontWeight:700, fontSize:13 }}>
+        Seleccionar o arrastrar acá
+      </div>
+      <div style={{ fontSize:9, color:DS.muted, marginTop:8 }}>JPG · PNG · WEBP · Máx. 10 MB</div>
+    </div>
+  );
+}
+
+// ── MÓDULO IA COMPLETO ───────────────────────────────────────
+function ModuloIA() {
+  const [modo, setModo] = useState("ambiente");
+  const [file, setFile] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [resultado, setResultado] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleFile = useCallback(f => {
+    setFile(f); setResultado(null); setError(null);
+    setPreview(URL.createObjectURL(f));
+  }, []);
+
+  const analizar = async () => {
+    if (!file) return;
+    setLoading(true); setError(null); setResultado(null);
+    try {
+      const steps = modo==="ambiente"
+        ? ["Procesando imagen...","Detectando ambiente...","Calculando bocas y circuitos...","Estimando materiales..."]
+        : ["Procesando plano...","Detectando ambientes...","Calculando circuitos...","Generando presupuesto..."];
+      for (let i=0; i<steps.length; i++) { setProgress(steps[i]); await new Promise(r=>setTimeout(r,600)); }
+      const base64 = await fileToBase64(file);
+      const data = await analizarConClaude(base64, file.type, modo);
+      setResultado(data);
+    } catch(e) {
+      setError(`Error: ${e.message}. Verificá que la imagen sea clara.`);
+    } finally { setLoading(false); setProgress(""); }
+  };
+
+  const reset = () => { setFile(null); setPreview(null); setResultado(null); setError(null); };
+
+  return (
+    <div>
+      {/* Modo tabs */}
+      <div style={{ display:"flex", gap:0, marginBottom:16, background:DS.panel,
+        border:`1px solid ${DS.border}`, borderRadius:8, padding:4 }}>
+        {[{id:"ambiente",label:"📷 Foto de Ambiente"},{id:"plano",label:"📐 Foto de Plano"}].map(m => (
+          <div key={m.id} onClick={()=>{setModo(m.id);reset();}}
+            style={{ flex:1, padding:"9px 16px", borderRadius:6, cursor:"pointer", textAlign:"center",
+              fontSize:13, fontWeight:700, letterSpacing:0.5, transition:"all 0.2s",
+              background:modo===m.id?DS.accent:"transparent", color:modo===m.id?"#000":DS.muted }}>
+            {m.label}
+          </div>
+        ))}
+      </div>
+      <IaAlert type="info" msg={modo==="ambiente"
+        ? "La IA detecta el tipo de espacio, estima dimensiones y calcula automáticamente bocas, circuitos, materiales y costos según AEA 90364."
+        : "La IA interpreta el plano, detecta todos los ambientes, calcula el cómputo eléctrico completo y genera presupuesto de materiales."} />
+
+      {!resultado && (
+        <div style={{ marginTop:14 }}>
+          {!preview ? <UploadZone onFile={handleFile} modo={modo} /> : (
+            <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:10, overflow:"hidden" }}>
+              <div style={{ position:"relative" }}>
+                <img src={preview} alt="" style={{ width:"100%", maxHeight:360, objectFit:"contain", background:DS.surface, display:"block" }} />
+                <div style={{ position:"absolute", top:10, right:10 }}>
+                  <button onClick={reset} style={{ padding:"6px 14px", background:"rgba(0,0,0,0.7)",
+                    border:`1px solid ${DS.border}`, color:DS.muted, borderRadius:5, cursor:"pointer",
+                    fontFamily:DS.font, fontSize:12 }}>✕ Cambiar</button>
+                </div>
+              </div>
+              <div style={{ padding:14 }}>
+                <button onClick={analizar} disabled={loading} style={{ width:"100%", padding:13,
+                  borderRadius:8, border:"none", fontFamily:DS.font, fontSize:15, fontWeight:700,
+                  letterSpacing:1, cursor:loading?"not-allowed":"pointer",
+                  background:loading?DS.border:`linear-gradient(135deg,${DS.accent},${DS.accentDim})`,
+                  color:loading?DS.muted:"#000", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                  {loading ? "Analizando..." : `⚡ Analizar con IA — ${modo==="ambiente"?"Calcular circuitos":"Calcular instalación completa"}`}
+                </button>
+              </div>
+            </div>
+          )}
+          {loading && (
+            <div style={{ background:DS.panel, border:`1px solid ${DS.border}`, borderRadius:8,
+              padding:24, textAlign:"center", marginTop:14 }}>
+              <div style={{ fontSize:36, marginBottom:10, animation:"spin 2s linear infinite", display:"inline-block" }}>⚡</div>
+              <div style={{ fontSize:15, fontWeight:700, color:DS.accent, marginBottom:6 }}>Claude IA analizando...</div>
+              <div style={{ fontSize:12, color:DS.muted }}>{progress}</div>
+              <div style={{ height:3, background:DS.border, borderRadius:2, overflow:"hidden", marginTop:14 }}>
+                <div style={{ height:"100%", background:`linear-gradient(90deg,${DS.accent},${DS.blue})`,
+                  borderRadius:2, animation:"scan 1.5s ease-in-out infinite" }} />
+              </div>
+            </div>
+          )}
+          {error && <div style={{ marginTop:12 }}><IaAlert msg={error} type="err" /></div>}
+        </div>
+      )}
+
+      {resultado && (
+        <div style={{ marginTop:0 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+            background:DS.panel, border:`1px solid ${DS.green}44`, borderRadius:8,
+            padding:"10px 14px", marginBottom:14 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+              <span style={{ color:DS.green, fontSize:16 }}>✓</span>
+              <span style={{ fontWeight:700 }}>Análisis completado</span>
+              <IaTag color={DS.green}>IA ELECTROCAD</IaTag>
+            </div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button onClick={()=>alert("PDF generado")} style={{ padding:"7px 14px", background:DS.accent,
+                color:"#000", border:"none", borderRadius:5, cursor:"pointer", fontFamily:DS.font, fontSize:12, fontWeight:700 }}>📄 PDF</button>
+              <button onClick={()=>alert("Enviando WhatsApp...")} style={{ padding:"7px 14px",
+                background:"rgba(34,197,94,0.15)", color:DS.green, border:`1px solid ${DS.green}44`,
+                borderRadius:5, cursor:"pointer", fontFamily:DS.font, fontSize:12, fontWeight:700 }}>💬 WA</button>
+              <button onClick={reset} style={{ padding:"7px 14px", background:"transparent",
+                border:`1px solid ${DS.border}`, color:DS.muted, borderRadius:5, cursor:"pointer",
+                fontFamily:DS.font, fontSize:12 }}>↺ Nueva</button>
+            </div>
+          </div>
+          {modo==="ambiente" ? <ResultadoAmbiente data={resultado} imagen={preview} />
+                             : <ResultadoPlano data={resultado} imagen={preview} />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── MÓDULOS EXISTENTES (Dashboard, Plano, Tablero, etc.) ─────
+function Dashboard({ notify, setModule }) {
+  const stats = [
+    { val:"14", label:"PROYECTOS ACTIVOS", delta:"+3 este mes" },
+    { val:"87", label:"INSTALACIONES",     delta:"↑ 12% anual" },
+    { val:"ARS 2.4M", label:"FACTURADO",   delta:"YTD 2025" },
+    { val:"98%", label:"CUMPLIMIENTO AEA", delta:"Sin observaciones" },
+  ];
+  const proyectos = [
+    { nombre:"Vivienda unifamiliar - Palermo", estado:"En curso",   bocas:42,  fecha:"12/06" },
+    { nombre:"Local comercial - Flores",       estado:"Presupuesto",bocas:28,  fecha:"15/06" },
+    { nombre:"Industria liviana - Quilmes",    estado:"Completado", bocas:115, fecha:"01/06" },
+    { nombre:"Dep. planta baja - San Telmo",   estado:"Revisión",   bocas:18,  fecha:"18/06" },
+    { nombre:"Oficinas 3er piso - Microcentro",estado:"En curso",   bocas:67,  fecha:"20/06" },
+  ];
+  const tag = e => {
+    const m = { "Completado":"tag-green","En curso":"tag-blue","Presupuesto":"tag-yellow","Revisión":"tag-red" };
+    return <span className={`tag ${m[e]||"tag-red"}`}>{e}</span>;
+  };
+  return (
+    <div>
+      <div className="grid-4" style={{ marginBottom:20 }}>
+        {stats.map((s,i) => (
+          <div key={i} className="card">
+            <div className="stat-val">{s.val}</div>
+            <div className="stat-label">{s.label}</div>
+            <div style={{ fontSize:11, color:DS.green, marginTop:6 }}>{s.delta}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid-2" style={{ marginBottom:20 }}>
+        <div className="card">
+          <div className="card-title">Proyectos Recientes</div>
+          <table className="table">
+            <thead><tr><th>PROYECTO</th><th>ESTADO</th><th>BOCAS</th><th>FECHA</th></tr></thead>
+            <tbody>{proyectos.map((p,i) => (
+              <tr key={i}>
+                <td style={{ fontWeight:600 }}>{p.nombre}</td>
+                <td>{tag(p.estado)}</td>
+                <td style={{ fontFamily:DS.mono, color:DS.accent }}>{p.bocas}</td>
+                <td style={{ color:DS.muted, fontSize:12 }}>{p.fecha}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div>
+          <div className="card" style={{ marginBottom:14 }}>
+            <div className="card-title">Acceso Rápido</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+              {[{label:"Nuevo Plano",mod:"plano",icon:"⊞"},{label:"Simulador",mod:"tablero",icon:"⚡"},
+                {label:"Análisis IA",mod:"ia",icon:"🤖"},{label:"Presupuesto",mod:"presupuesto",icon:"₿"}].map(a => (
+                <button key={a.mod} className="btn btn-ghost" style={{ justifyContent:"flex-start",gap:8 }} onClick={()=>setModule(a.mod)}>
+                  <span style={{ fontSize:16 }}>{a.icon}</span>{a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">Alertas del Sistema</div>
+            <div className="alert alert-warn"><span>⚠</span><span>Proyecto "Flores" sin cálculo de caída de tensión.</span></div>
+            <div className="alert alert-ok"><span>✓</span><span>Certificado AEA vigente hasta Dic 2025.</span></div>
+            <div className="alert alert-err"><span>✕</span><span>Circuito C3 tablero "Quilmes" — térmica sobredimensionada.</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-title">Referencia Rápida — Secciones de Cable (AEA 90364)</div>
+        <table className="table">
+          <thead><tr><th>SECCIÓN</th><th>AMP. MÁX.</th><th>USO TÍPICO</th><th>TÉRMICA</th></tr></thead>
+          <tbody>{CABLES.map((c,i) => (
+            <tr key={i}>
+              <td style={{ fontFamily:DS.mono, color:DS.accent, fontWeight:600 }}>{c.seccion}</td>
+              <td style={{ fontFamily:DS.mono }}>{c.amp_max} A</td>
+              <td style={{ fontSize:12, color:DS.muted }}>{c.uso}</td>
+              <td><span className="tag tag-blue">{c.amp_max} A</span></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function PlanoVirtual({ notify }) {
+  const [elementos, setElementos] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const [dragOffset, setDragOffset] = useState({ x:0,y:0 });
+  const [tool, setTool] = useState(null);
+  const canvasRef = useRef(null);
+
+  const handleCanvasClick = useCallback(e => {
+    if (!tool) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const el = ELEMENTOS_PLANO.find(el=>el.id===tool);
+    const newEl = { ...el, x:e.clientX-rect.left-el.w/2, y:e.clientY-rect.top-el.h/2, uid:Date.now() };
+    setElementos(prev=>[...prev,newEl]);
+    notify(`${el.label} colocado`, "ok");
+  }, [tool, notify]);
+
+  const handleMouseDown = useCallback((e, uid) => {
+    e.stopPropagation();
+    const el = elementos.find(el=>el.uid===uid);
+    setDragging(uid); setSelected(uid);
+    setDragOffset({ x:e.clientX-el.x, y:e.clientY-el.y });
+  }, [elementos]);
+
+  const handleMouseMove = useCallback(e => {
+    if (!dragging) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    setElementos(prev=>prev.map(el=>el.uid===dragging?{...el,x:e.clientX-rect.left-dragOffset.x,y:e.clientY-rect.top-dragOffset.y}:el));
+  }, [dragging, dragOffset]);
+
+  const conteo = ELEMENTOS_PLANO.map(t=>({...t,cantidad:elementos.filter(el=>el.id===t.id).length})).filter(t=>t.cantidad>0);
+  const exceso = elementos.filter(el=>el.id==="toma").length > 8;
+
+  return (
+    <div style={{ display:"flex", gap:14, height:"calc(100vh - 110px)" }}>
+      <div className="card" style={{ width:105, flexShrink:0, overflowY:"auto", padding:10 }}>
+        <div className="card-title" style={{ marginBottom:8 }}>HERRAM.</div>
+        {ELEMENTOS_PLANO.map(el => (
+          <div key={el.id} className={`toolbar-el ${tool===el.id?"selected":""}`} onClick={()=>setTool(tool===el.id?null:el.id)}>
+            <span className="toolbar-el-icon" style={{ color:el.color }}>{el.icon}</span>
+            <span className="toolbar-el-label">{el.label}</span>
+          </div>
+        ))}
+        <div className="section-sep" />
+        <button className="btn btn-ghost" style={{ width:"100%",fontSize:11,marginBottom:6 }} onClick={()=>{setElementos(p=>p.filter(el=>el.uid!==selected));setSelected(null);}}>🗑 Borrar</button>
+        <button className="btn btn-danger" style={{ width:"100%",fontSize:11 }} onClick={()=>{setElementos([]);setSelected(null);}}>✕ Limpiar</button>
+      </div>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", gap:10 }}>
+        {exceso && <div className="alert alert-warn" style={{ margin:0 }}>⚠ <strong>EXCESO DE BOCAS:</strong> Más de 8 tomacorrientes. Verificar distribución AEA 90364.</div>}
+        <div className="canvas-wrap" style={{ flex:1 }} ref={canvasRef} onClick={handleCanvasClick} onMouseMove={handleMouseMove} onMouseUp={()=>setDragging(null)}>
+          <div className="canvas-grid" />
+          {elementos.map(el => (
+            <div key={el.uid} className="element-placed" style={{ left:el.x,top:el.y,zIndex:selected===el.uid?10:1 }} onMouseDown={e=>handleMouseDown(e,el.uid)}>
+              <div className="element-icon" style={{ width:el.w,height:el.h,background:`${el.color}18`,borderColor:selected===el.uid?DS.accent:el.color,color:el.color }}>{el.icon}</div>
+              <span className="element-label">{el.label}</span>
+            </div>
+          ))}
+          {tool && <div style={{ position:"absolute",bottom:12,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.7)",padding:"5px 14px",borderRadius:20,fontSize:11,color:DS.accent,pointerEvents:"none" }}>Clic → {ELEMENTOS_PLANO.find(e=>e.id===tool)?.label}</div>}
+        </div>
+      </div>
+      <div style={{ width:190, flexShrink:0, display:"flex", flexDirection:"column", gap:12 }}>
+        <div className="card">
+          <div className="card-title">CONTEO</div>
+          {conteo.length===0?<div style={{ color:DS.muted,fontSize:12 }}>Sin elementos</div>:conteo.map(t=>(
+            <div key={t.id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
+              <span style={{ fontSize:12,color:t.color }}>{t.icon} {t.label}</span>
+              <span style={{ fontFamily:DS.mono,color:DS.accent,fontWeight:700 }}>{t.cantidad}</span>
+            </div>
+          ))}
+          <div className="section-sep" />
+          <div style={{ fontSize:12,color:DS.muted }}>Total: <strong style={{ color:DS.text }}>{elementos.length}</strong></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SimuladorTablero({ notify }) {
+  const [breakers, setBreakers] = useState([
+    { id:1, amp:16, label:"C1\nIlum.",  status:"on",   carga:12 },
+    { id:2, amp:20, label:"C2\nTomas",  status:"on",   carga:18 },
+    { id:3, amp:25, label:"C3\nAire",   status:"on",   carga:24 },
+    { id:4, amp:32, label:"C4\nCocina", status:"on",   carga:10 },
+    { id:5, amp:16, label:"C5\nIlum.",  status:"on",   carga:8  },
+    { id:6, amp:20, label:"C6\nTomas",  status:"on",   carga:16 },
+    { id:7, amp:40, label:"GRAL\nDif.", status:"on",   carga:88 },
+    { id:8, amp:10, label:"C7\nAux.",   status:"off",  carga:0  },
+  ]);
+  const toggle = id => {
+    setBreakers(p=>p.map(b=>b.id===id?{...b,status:b.status==="on"?"off":"on"}:b));
+    const b = breakers.find(b=>b.id===id);
+    notify(`Breaker ${b?.label?.replace("\n"," ")} — ${b?.status==="on"?"ABIERTO":"CERRADO"}`, "info");
+  };
+  const simSobrecarga = () => {
+    setBreakers(p=>p.map(b=>b.id===3?{...b,status:"trip",carga:32}:b));
+    notify("⚡ Térmica C3 disparada por sobrecarga — 32A > 25A", "warn");
+  };
+  const simCC = () => {
+    setBreakers(p=>p.map(b=>b.id===2?{...b,status:"trip",carga:200}:b.id===7?{...b,status:"trip"}:b));
+    notify("⚡ Diferencial general disparado por cortocircuito", "warn");
+  };
+  const reset = () => {
+    setBreakers(p=>p.map(b=>({...b,status:b.id===8?"off":"on",carga:b.id===3?24:b.id===2?18:b.carga})));
+    notify("Sistema restablecido", "ok");
+  };
+  const cargaTotal = breakers.filter(b=>b.status==="on").reduce((s,b)=>s+b.carga,0);
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 280px", gap:16 }}>
+      <div>
+        <div className="card" style={{ marginBottom:16 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+            <div className="card-title" style={{ margin:0 }}>TABLERO GENERAL — RIEL DIN VIRTUAL</div>
+            <div style={{ display:"flex", gap:8 }}>
+              <button className="btn btn-danger" onClick={simSobrecarga}>⚡ Sobrecarga</button>
+              <button className="btn btn-danger" onClick={simCC}>⚡⚡ Cortocircuito</button>
+              <button className="btn btn-success" onClick={reset}>↺ Reset</button>
+            </div>
+          </div>
+          <div className="din-rail">
+            <div style={{ fontSize:9,color:DS.muted,letterSpacing:2,marginBottom:8 }}>RIEL DIN 35mm — TABLERO PRINCIPAL</div>
+            <div className="din-track" />
+            <div className="breakers-row">
+              {breakers.map(b => (
+                <div key={b.id} className={`breaker ${b.status}`} onClick={()=>toggle(b.id)} title={`${b.amp}A — Carga: ${b.carga}A`}>
+                  <div className="breaker-amp">{b.amp}A</div>
+                  <div className="breaker-toggle" />
+                  <div className="breaker-label">{b.label}</div>
+                  {b.status==="trip" && <div style={{ position:"absolute",top:-8,right:-8,width:16,height:16,borderRadius:"50%",background:DS.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700,color:"#000" }}>!</div>}
+                </div>
+              ))}
+            </div>
+            <div className="din-track" />
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">ESTADO DE CIRCUITOS</div>
+          <table className="table">
+            <thead><tr><th>CIRCUITO</th><th>TÉRMICA</th><th>CARGA</th><th>% USO</th><th>ESTADO</th></tr></thead>
+            <tbody>{breakers.map(b => {
+              const pct = Math.min(Math.round(b.carga/b.amp*100),150);
+              return <tr key={b.id}>
+                <td style={{ fontWeight:600 }}>{b.label.replace("\n"," — ")}</td>
+                <td style={{ fontFamily:DS.mono }}>{b.amp} A</td>
+                <td style={{ fontFamily:DS.mono }}>{b.carga} A</td>
+                <td>
+                  <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                    <div className="progress-bar" style={{ flex:1 }}>
+                      <div className="progress-fill" style={{ width:`${Math.min(pct,100)}%`,background:pct>90?DS.red:pct>70?DS.yellow:DS.green }} />
+                    </div>
+                    <span style={{ fontSize:11,fontFamily:DS.mono,minWidth:35 }}>{pct}%</span>
+                  </div>
+                </td>
+                <td>{b.status==="on"?<span className="tag tag-green">CERRADO</span>:b.status==="off"?<span className="tag" style={{ background:"rgba(100,116,139,0.15)",color:DS.muted }}>ABIERTO</span>:<span className="tag tag-red">DISPARADO</span>}</td>
+              </tr>;
+            })}</tbody>
+          </table>
+        </div>
+      </div>
+      <div style={{ display:"flex",flexDirection:"column",gap:14 }}>
+        <div className="card">
+          <div className="card-title">CARGA TOTAL</div>
+          <div className="stat-val">{cargaTotal} A</div>
+          <div className="stat-label">CONSUMO ACTIVO</div>
+          <div className="section-sep" />
+          <div style={{ fontSize:12,color:DS.muted,marginBottom:4 }}>Potencia estimada</div>
+          <div style={{ fontFamily:DS.mono,fontSize:20,color:DS.blue }}>{(cargaTotal*220/1000).toFixed(1)} kW</div>
+        </div>
+        <div className="card">
+          <div className="card-title">NORMA AEA</div>
+          <div style={{ fontSize:11,color:DS.muted,lineHeight:1.6 }}>
+            Iluminación máx. <strong style={{ color:DS.text }}>8 bocas</strong>.<br/>
+            Tomas máx. <strong style={{ color:DS.text }}>6 bocas</strong>.<br/>
+            Factor demanda: <strong style={{ color:DS.text }}>0.75</strong>.<br/>
+            Caída tensión máx.: <strong style={{ color:DS.text }}>3%</strong>.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Calculos({ notify }) {
+  const [tab, setTab] = useState("caida");
+  const [caida, setCaida] = useState({ corriente:20, distancia:50, seccion:"2.5", tension:220 });
+  const [caidaRes, setCaidaRes] = useState(null);
+  const [dim, setDim] = useState({ potencia:2000, tension:220, fp:1, temp:30 });
+  const [dimRes, setDimRes] = useState(null);
+
+  const calcCaida = () => {
+    const cv = (2*0.0172*parseFloat(caida.distancia)*parseFloat(caida.corriente))/parseFloat(caida.seccion);
+    const pct = (cv/parseFloat(caida.tension))*100;
+    setCaidaRes({ caida_v:cv.toFixed(2), pct:pct.toFixed(2), ok:pct<=3 });
+    notify(pct<=3?"✓ Caída dentro del límite AEA":"⚠ Caída excede 3% — aumentar sección", pct<=3?"ok":"warn");
+  };
+  const calcDim = () => {
+    const I = parseFloat(dim.potencia)/(parseFloat(dim.tension)*parseFloat(dim.fp));
+    const ft = dim.temp>40?0.71:dim.temp>30?0.87:1;
+    const Iadj = I/ft;
+    const cable = CABLES.find(c=>c.amp_max>=Iadj*1.25)||CABLES[CABLES.length-1];
+    const termica = TERMICAS.find(t=>t>=Iadj)||100;
+    setDimRes({ I:I.toFixed(1), Iadj:Iadj.toFixed(1), cable, termica });
+    notify(`Cable ${cable.seccion} — Térmica ${termica}A`, "ok");
+  };
+
+  return (
+    <div>
+      <div className="tabs">
+        {[{id:"caida",label:"Caída de Tensión"},{id:"dimension",label:"Dimensionado de Cable"},{id:"referencia",label:"Tabla de Referencia"}].map(t => (
+          <div key={t.id} className={`tab ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>{t.label}</div>
+        ))}
+      </div>
+      {tab==="caida" && (
+        <div className="grid-2">
+          <div className="card">
+            <div className="card-title">DATOS DEL CIRCUITO</div>
+            <div className="form-row">
+              <div><label>CORRIENTE (A)</label><input type="number" value={caida.corriente} onChange={e=>setCaida(p=>({...p,corriente:e.target.value}))} /></div>
+              <div><label>DISTANCIA (m)</label><input type="number" value={caida.distancia} onChange={e=>setCaida(p=>({...p,distancia:e.target.value}))} /></div>
+            </div>
+            <div className="form-row">
+              <div><label>SECCIÓN CABLE</label>
+                <select value={caida.seccion} onChange={e=>setCaida(p=>({...p,seccion:e.target.value}))}>
+                  {CABLES.map(c=><option key={c.seccion} value={parseFloat(c.seccion)}>{c.seccion}</option>)}
+                </select>
+              </div>
+              <div><label>TENSIÓN</label>
+                <select value={caida.tension} onChange={e=>setCaida(p=>({...p,tension:e.target.value}))}>
+                  <option value={220}>220 V</option><option value={380}>380 V</option>
+                </select>
+              </div>
+            </div>
+            <button className="btn btn-primary" style={{ width:"100%",justifyContent:"center" }} onClick={calcCaida}>∑ Calcular</button>
+          </div>
+          <div className="card">
+            <div className="card-title">RESULTADO</div>
+            {!caidaRes?<div style={{ color:DS.muted,fontSize:13 }}>Completá los datos y calculá.</div>:(
+              <>
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11,color:DS.muted,marginBottom:4 }}>CAÍDA DE TENSIÓN</div>
+                  <div style={{ fontFamily:DS.mono,fontSize:32,color:DS.accent,fontWeight:700 }}>{caidaRes.caida_v} V</div>
+                </div>
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ fontSize:11,color:DS.muted,marginBottom:4 }}>PORCENTAJE</div>
+                  <div style={{ fontFamily:DS.mono,fontSize:32,color:caidaRes.ok?DS.green:DS.red,fontWeight:700 }}>{caidaRes.pct}%</div>
+                </div>
+                <div className={`alert ${caidaRes.ok?"alert-ok":"alert-err"}`}>
+                  {caidaRes.ok?"✓ Dentro del límite AEA (máx. 3%)":"✕ SUPERA límite — Aumentar sección de cable"}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {tab==="dimension" && (
+        <div className="grid-2">
+          <div className="card">
+            <div className="card-title">PARÁMETROS DE CARGA</div>
+            <div className="form-row">
+              <div><label>POTENCIA (W)</label><input type="number" value={dim.potencia} onChange={e=>setDim(p=>({...p,potencia:e.target.value}))} /></div>
+              <div><label>TENSIÓN (V)</label>
+                <select value={dim.tension} onChange={e=>setDim(p=>({...p,tension:e.target.value}))}>
+                  <option value={220}>220 V</option><option value={380}>380 V</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-row">
+              <div><label>FACTOR DE POTENCIA</label><input type="number" step="0.05" min="0.5" max="1" value={dim.fp} onChange={e=>setDim(p=>({...p,fp:e.target.value}))} /></div>
+              <div><label>TEMPERATURA AMBIENTE</label>
+                <select value={dim.temp} onChange={e=>setDim(p=>({...p,temp:+e.target.value}))}>
+                  <option value={25}>25°C</option><option value={30}>30°C</option><option value={40}>40°C</option><option value={50}>50°C</option>
+                </select>
+              </div>
+            </div>
+            <button className="btn btn-primary" style={{ width:"100%",justifyContent:"center" }} onClick={calcDim}>∑ Dimensionar</button>
+          </div>
+          <div className="card">
+            <div className="card-title">RESULTADO</div>
+            {!dimRes?<div style={{ color:DS.muted,fontSize:13 }}>Completá los parámetros.</div>:(
+              <>
+                <div className="grid-2" style={{ marginBottom:14 }}>
+                  <div><div style={{ fontSize:11,color:DS.muted }}>CORRIENTE</div><div style={{ fontFamily:DS.mono,fontSize:22,color:DS.blue,fontWeight:700 }}>{dimRes.I} A</div></div>
+                  <div><div style={{ fontSize:11,color:DS.muted }}>AJUSTADA</div><div style={{ fontFamily:DS.mono,fontSize:22,color:DS.accent,fontWeight:700 }}>{dimRes.Iadj} A</div></div>
+                </div>
+                <div className="alert alert-ok"><div><div style={{ fontWeight:700 }}>CABLE: {dimRes.cable.seccion}</div><div style={{ fontSize:11,opacity:0.8 }}>{dimRes.cable.uso}</div></div></div>
+                <div style={{ background:"rgba(43,143,232,0.1)",border:"1px solid rgba(43,143,232,0.3)",color:DS.blue,padding:"10px 14px",borderRadius:6,marginTop:8 }}>⚡ TÉRMICA: <strong>{dimRes.termica} A</strong></div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {tab==="referencia" && (
+        <div className="card">
+          <div className="card-title">TABLA COMPLETA — AEA 90364</div>
+          <table className="table">
+            <thead><tr><th>SECCIÓN</th><th>AMP. MÁX.</th><th>USO TÍPICO</th><th>TÉRMICA</th></tr></thead>
+            <tbody>{CABLES.map((c,i) => (
+              <tr key={i}>
+                <td style={{ fontFamily:DS.mono,color:DS.accent,fontWeight:700 }}>{c.seccion}</td>
+                <td style={{ fontFamily:DS.mono }}>{c.amp_max} A</td>
+                <td style={{ fontSize:12,color:DS.muted }}>{c.uso}</td>
+                <td><span className="tag tag-blue">{c.amp_max} A</span></td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SolarFV({ notify }) {
+  const [form, setForm] = useState({ consumo:500, hsp:5.5, eficiencia:80, tension:24 });
+  const [result, setResult] = useState(null);
+  const calcular = () => {
+    const cd = parseFloat(form.consumo)/30;
+    const pp = cd/(parseFloat(form.hsp)*(parseFloat(form.eficiencia)/100));
+    const paneles = Math.ceil(pp/0.4);
+    const baterias = Math.ceil((cd*2)/(parseFloat(form.tension)*0.1));
+    const inversor = (pp*1.25).toFixed(0);
+    setResult({ cd:cd.toFixed(1), pp:pp.toFixed(0), paneles, baterias, inversor });
+    notify(`Sistema: ${paneles} paneles 400W — ${baterias} baterías 100Ah`, "ok");
+  };
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div>
+        <div className="card" style={{ marginBottom:16 }}>
+          <div className="card-title">DATOS DE CONSUMO</div>
+          <div className="form-row">
+            <div><label>CONSUMO MENSUAL (kWh)</label><input type="number" value={form.consumo} onChange={e=>setForm(p=>({...p,consumo:e.target.value}))} /></div>
+            <div><label>HORAS SOL PICO</label><input type="number" step="0.5" value={form.hsp} onChange={e=>setForm(p=>({...p,hsp:e.target.value}))} /></div>
+          </div>
+          <div className="form-row">
+            <div><label>EFICIENCIA (%)</label><input type="number" value={form.eficiencia} onChange={e=>setForm(p=>({...p,eficiencia:e.target.value}))} /></div>
+            <div><label>TENSIÓN BATERÍA</label>
+              <select value={form.tension} onChange={e=>setForm(p=>({...p,tension:e.target.value}))}>
+                <option value={12}>12 V</option><option value={24}>24 V</option><option value={48}>48 V</option>
+              </select>
+            </div>
+          </div>
+          <button className="btn btn-primary" style={{ width:"100%",justifyContent:"center" }} onClick={calcular}>☀ Calcular Sistema Solar</button>
+        </div>
+        {result && (
+          <div className="card">
+            <div className="card-title">SISTEMA RECOMENDADO</div>
+            <div className="grid-2" style={{ marginBottom:12 }}>
+              <div><div style={{ fontSize:11,color:DS.muted }}>PANELES 400W</div><div style={{ fontFamily:DS.mono,fontSize:30,color:DS.accent,fontWeight:700 }}>{result.paneles}</div></div>
+              <div><div style={{ fontSize:11,color:DS.muted }}>BATERÍAS 100Ah</div><div style={{ fontFamily:DS.mono,fontSize:30,color:DS.blue,fontWeight:700 }}>{result.baterias}</div></div>
+            </div>
+            <table className="table">
+              <tbody>
+                <tr><td style={{ color:DS.muted }}>Consumo diario</td><td style={{ fontFamily:DS.mono,color:DS.text }}>{result.cd} kWh/día</td></tr>
+                <tr><td style={{ color:DS.muted }}>Potencia total</td><td style={{ fontFamily:DS.mono,color:DS.accent }}>{result.paneles*400} W</td></tr>
+                <tr><td style={{ color:DS.muted }}>Inversor mínimo</td><td style={{ fontFamily:DS.mono,color:DS.text }}>{result.inversor} W</td></tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <div className="card">
+        <div className="card-title">REFERENCIA HSP — ARGENTINA</div>
+        <table className="table">
+          <thead><tr><th>CIUDAD</th><th>HSP PROM.</th><th>ZONA</th></tr></thead>
+          <tbody>{[["Buenos Aires","5.5","Litoral"],["Mendoza","6.8","Cuyo"],["Córdoba","5.9","Centro"],
+            ["Rosario","5.4","Litoral"],["Salta","7.1","NOA"],["Bariloche","4.2","Patagonia"],["Ushuaia","3.1","Pat. Sur"]].map(([c,h,z]) => (
+            <tr key={c}><td style={{ fontWeight:600 }}>{c}</td><td style={{ fontFamily:DS.mono,color:DS.accent }}>{h}</td><td><span className="tag tag-blue">{z}</span></td></tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function CorrientesDebiles({ notify }) {
+  const [tab, setTab] = useState("camaras");
+  const [camaras, setCamaras] = useState([
+    { id:1, nombre:"Entrada principal", tipo:"Dome IP 4MP",  resolucion:"1440p", ir:"30m", ip:"192.168.1.101", estado:"online" },
+    { id:2, nombre:"Garage",            tipo:"Bullet IP 2MP",resolucion:"1080p", ir:"50m", ip:"192.168.1.102", estado:"online" },
+    { id:3, nombre:"Patio trasero",     tipo:"PTZ 4MP",      resolucion:"1440p", ir:"80m", ip:"192.168.1.103", estado:"offline"},
+    { id:4, nombre:"Sala",              tipo:"Fisheye 8MP",  resolucion:"4K",    ir:"Sin IR",ip:"192.168.1.104",estado:"online" },
+  ]);
+  const alarmas = [
+    { zona:"Z1", descripcion:"Entrada principal", tipo:"PIR",         estado:"armado",    sensibilidad:"Alta"  },
+    { zona:"Z2", descripcion:"Ventanas frente",   tipo:"Magnético",   estado:"armado",    sensibilidad:"Media" },
+    { zona:"Z3", descripcion:"Habitación 1",      tipo:"PIR",         estado:"desarmado", sensibilidad:"Baja"  },
+    { zona:"Z4", descripcion:"Cocina",            tipo:"Humo + Temp", estado:"armado",    sensibilidad:"Alta"  },
+    { zona:"Z5", descripcion:"Sótano",            tipo:"Inundación",  estado:"armado",    sensibilidad:"Alta"  },
+  ];
+  return (
+    <div>
+      <div className="tabs">
+        {[{id:"camaras",label:"Cámaras CCTV"},{id:"alarmas",label:"Alarmas"},{id:"cable",label:"Cableado Estructurado"}].map(t=>(
+          <div key={t.id} className={`tab ${tab===t.id?"active":""}`} onClick={()=>setTab(t.id)}>{t.label}</div>
+        ))}
+      </div>
+      {tab==="camaras" && (
+        <div>
+          <div className="grid-4" style={{ marginBottom:16 }}>
+            <div className="card"><div className="stat-val">{camaras.length}</div><div className="stat-label">CÁMARAS</div></div>
+            <div className="card"><div className="stat-val" style={{ color:DS.green }}>{camaras.filter(c=>c.estado==="online").length}</div><div className="stat-label">ONLINE</div></div>
+            <div className="card"><div className="stat-val" style={{ color:DS.red }}>{camaras.filter(c=>c.estado==="offline").length}</div><div className="stat-label">OFFLINE</div></div>
+            <div className="card"><div className="stat-val">24/7</div><div className="stat-label">GRABACIÓN</div></div>
+          </div>
+          <div className="card">
+            <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
+              <div className="card-title" style={{ margin:0 }}>INVENTARIO</div>
+              <button className="btn btn-primary" onClick={()=>{setCamaras(p=>[...p,{id:p.length+1,nombre:`Cámara ${p.length+1}`,tipo:"Dome IP 2MP",resolucion:"1080p",ir:"20m",ip:`192.168.1.${100+p.length+1}`,estado:"online"}]);notify("Cámara agregada","ok");}}>+ Agregar</button>
+            </div>
+            <table className="table">
+              <thead><tr><th>NOMBRE</th><th>TIPO</th><th>RES.</th><th>IR</th><th>IP</th><th>ESTADO</th></tr></thead>
+              <tbody>{camaras.map(c=>(
+                <tr key={c.id}>
+                  <td style={{ fontWeight:600 }}>{c.nombre}</td><td style={{ fontSize:12 }}>{c.tipo}</td>
+                  <td style={{ fontFamily:DS.mono }}>{c.resolucion}</td><td style={{ fontFamily:DS.mono,fontSize:12 }}>{c.ir}</td>
+                  <td style={{ fontFamily:DS.mono,fontSize:12,color:DS.muted }}>{c.ip}</td>
+                  <td>{c.estado==="online"?<span className="tag tag-green">● ON</span>:<span className="tag tag-red">● OFF</span>}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {tab==="alarmas" && (
+        <div className="card">
+          <div className="card-title">ZONAS DE ALARMA</div>
+          <table className="table">
+            <thead><tr><th>ZONA</th><th>DESCRIPCIÓN</th><th>SENSOR</th><th>SENSIB.</th><th>ESTADO</th></tr></thead>
+            <tbody>{alarmas.map(a=>(
+              <tr key={a.zona}>
+                <td style={{ fontFamily:DS.mono,color:DS.accent,fontWeight:700 }}>{a.zona}</td>
+                <td>{a.descripcion}</td>
+                <td><span className="tag tag-blue">{a.tipo}</span></td>
+                <td style={{ fontSize:12 }}>{a.sensibilidad}</td>
+                <td>{a.estado==="armado"?<span className="tag tag-green">ARMADO</span>:<span className="tag" style={{ background:"rgba(100,116,139,0.15)",color:DS.muted }}>DESARMADO</span>}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+      {tab==="cable" && (
+        <div className="card">
+          <div className="card-title">ESTÁNDARES DE CABLEADO + PoE</div>
+          <table className="table">
+            <thead><tr><th>TIPO</th><th>CAT.</th><th>VELOCIDAD</th><th>USO</th></tr></thead>
+            <tbody>{[["UTP","Cat 5e","1 Gbps","Red / CCTV IP"],["UTP","Cat 6","10 Gbps","Red / CCTV HD"],["UTP","Cat 6A","10 Gbps","Data center"],["FTP","Cat 6","10 Gbps","Amb. interferencia"],["Coaxial","RG-59","—","CCTV analógico"],["Coaxial","RG-6","—","CCTV HD / TV"]].map(([t,c,v,u])=>(
+              <tr key={c+t}><td style={{ fontWeight:600 }}>{t}</td><td style={{ fontFamily:DS.mono }}>{c}</td><td style={{ fontFamily:DS.mono,fontSize:12 }}>{v}</td><td style={{ fontSize:12,color:DS.muted }}>{u}</td></tr>
+            ))}</tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Presupuesto({ notify }) {
+  const [items, setItems] = useState(MATERIALES_BASE.slice(0,6).map((m,i)=>({...m,id:i,cantidad:1,selected:false})));
+  const [markup, setMarkup] = useState(30);
+  const [cliente, setCliente] = useState("Juan Pérez");
+  const [obra, setObra] = useState("Vivienda Palermo");
+  const toggle = id => setItems(p=>p.map(i=>i.id===id?{...i,selected:!i.selected}:i));
+  const updateQty = (id,q) => setItems(p=>p.map(i=>i.id===id?{...i,cantidad:Math.max(1,+q)}:i));
+  const sel = items.filter(i=>i.selected);
+  const sub = sel.reduce((s,i)=>s+i.precio*i.cantidad,0);
+  const mo = sub*(markup/100);
+  const total = sub+mo;
+  const iva = total*0.21;
+  const final = total+iva;
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:16 }}>
+      <div>
+        <div className="card" style={{ marginBottom:14 }}>
+          <div className="card-title">DATOS DEL PROYECTO</div>
+          <div className="form-row">
+            <div><label>CLIENTE</label><input value={cliente} onChange={e=>setCliente(e.target.value)} /></div>
+            <div><label>OBRA / PROYECTO</label><input value={obra} onChange={e=>setObra(e.target.value)} /></div>
+          </div>
+        </div>
+        <div className="card">
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
+            <div className="card-title" style={{ margin:0 }}>CÓMPUTO DE MATERIALES</div>
+            <button className="btn btn-primary" onClick={()=>{const m=MATERIALES_BASE[items.length%MATERIALES_BASE.length];setItems(p=>[...p,{...m,id:Date.now(),cantidad:1,selected:true}]);notify("Material agregado","ok");}}>+ Agregar</button>
+          </div>
+          {items.map(item=>(
+            <div key={item.id} className="budget-item" style={{ borderColor:item.selected?DS.accent:DS.border,background:item.selected?"rgba(245,166,35,0.05)":DS.surface }}>
+              <input type="checkbox" checked={item.selected} onChange={()=>toggle(item.id)} style={{ width:16,height:16,accentColor:DS.accent }} />
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13,fontWeight:600 }}>{item.nombre}</div>
+                <div style={{ fontSize:11,color:DS.muted,fontFamily:DS.mono }}>ARS {item.precio.toLocaleString("es-AR")} / u</div>
+              </div>
+              <input type="number" min="1" value={item.cantidad} onChange={e=>updateQty(item.id,e.target.value)} style={{ width:60,textAlign:"center" }} />
+              <div style={{ minWidth:100,textAlign:"right",fontFamily:DS.mono,color:item.selected?DS.accent:DS.muted }}>ARS {(item.precio*item.cantidad).toLocaleString("es-AR")}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{ display:"flex",flexDirection:"column",gap:12 }}>
+        <div className="card">
+          <div className="card-title">RESUMEN ECONÓMICO</div>
+          <div style={{ display:"flex",flexDirection:"column",gap:10 }}>
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:13 }}><span style={{ color:DS.muted }}>Materiales</span><span style={{ fontFamily:DS.mono }}>ARS {sub.toLocaleString("es-AR")}</span></div>
+            <div>
+              <div style={{ display:"flex",justifyContent:"space-between",fontSize:13,marginBottom:5 }}><span style={{ color:DS.muted }}>M. de obra ({markup}%)</span><span style={{ fontFamily:DS.mono }}>ARS {mo.toLocaleString("es-AR")}</span></div>
+              <input type="range" min="10" max="100" value={markup} onChange={e=>setMarkup(+e.target.value)} style={{ width:"100%",accentColor:DS.accent }} />
+            </div>
+            <div style={{ height:1,background:DS.border }} />
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:13 }}><span style={{ color:DS.muted }}>Subtotal sin IVA</span><span style={{ fontFamily:DS.mono }}>ARS {total.toLocaleString("es-AR")}</span></div>
+            <div style={{ display:"flex",justifyContent:"space-between",fontSize:13 }}><span style={{ color:DS.muted }}>IVA 21%</span><span style={{ fontFamily:DS.mono }}>ARS {iva.toLocaleString("es-AR")}</span></div>
+            <div style={{ height:1,background:DS.border }} />
+            <div style={{ display:"flex",justifyContent:"space-between" }}><span style={{ fontWeight:700 }}>TOTAL</span><span style={{ fontFamily:DS.mono,fontSize:18,fontWeight:700,color:DS.accent }}>ARS {final.toLocaleString("es-AR")}</span></div>
+          </div>
+        </div>
+        <div className="card">
+          <div className="card-title">EXPORTAR</div>
+          <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
+            <button className="btn btn-primary" style={{ justifyContent:"center" }} onClick={()=>notify("PDF generado","ok")}>📄 Generar PDF</button>
+            <button className="btn btn-success" style={{ justifyContent:"center" }} onClick={()=>notify("Enviando por WhatsApp...","ok")}>💬 Enviar por WhatsApp</button>
+            <button className="btn btn-ghost" style={{ justifyContent:"center" }} onClick={()=>notify("Proyecto guardado","ok")}>💾 Guardar Proyecto</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Perfil({ notify }) {
+  return (
+    <div className="grid-2">
+      <div>
+        <div className="card" style={{ marginBottom:14 }}>
+          <div style={{ display:"flex",alignItems:"center",gap:14,marginBottom:18 }}>
+            <div style={{ width:60,height:60,borderRadius:"50%",background:DS.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#000",flexShrink:0 }}>CR</div>
+            <div>
+              <div style={{ fontSize:18,fontWeight:700 }}>Carlos Rodríguez</div>
+              <div style={{ color:DS.muted,fontSize:13 }}>Electricista Matriculado — MAT. 04-2847</div>
+              <span style={{ background:"linear-gradient(135deg,#F5A623,#C47D0E)",color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:3,letterSpacing:2,marginTop:5,display:"inline-block" }}>PREMIUM ACTIVO</span>
+            </div>
+          </div>
+          <div className="card-title">DATOS PROFESIONALES</div>
+          <div className="form-row">
+            <div><label>NOMBRE COMPLETO</label><input defaultValue="Carlos Rodríguez" /></div>
+            <div><label>MATRÍCULA</label><input defaultValue="04-2847" /></div>
+          </div>
+          <div className="form-row">
+            <div><label>EMAIL</label><input defaultValue="carlos@electro.com.ar" /></div>
+            <div><label>TELÉFONO</label><input defaultValue="+54 11 4567-8901" /></div>
+          </div>
+          <div className="form-row">
+            <div><label>CUIT</label><input defaultValue="20-28374651-5" /></div>
+            <div><label>PROVINCIA</label><select><option>Buenos Aires</option><option>Córdoba</option><option>Santa Fe</option></select></div>
+          </div>
+          <button className="btn btn-primary" style={{ justifyContent:"center" }} onClick={()=>notify("Perfil actualizado","ok")}>Guardar Cambios</button>
+        </div>
+      </div>
+      <div>
+        <div className="card" style={{ marginBottom:14 }}>
+          <div className="card-title">PLAN PREMIUM</div>
+          <div style={{ background:"linear-gradient(135deg,rgba(245,166,35,0.1),rgba(196,125,14,0.05))",border:`1px solid ${DS.accentDim}`,borderRadius:8,padding:14,marginBottom:14 }}>
+            <div style={{ fontSize:22,fontWeight:700,color:DS.accent }}>⚡ ElectroCAD PRO</div>
+            <div style={{ fontSize:12,color:DS.muted,marginTop:4 }}>Vence: 31 de Diciembre 2025</div>
+          </div>
+          {["✓ Planos ilimitados","✓ Simulador DIN avanzado","✓ Cálculos AEA 90364","✓ Análisis IA (foto ambiente + plano)","✓ Solar fotovoltaico","✓ Presupuesto PDF + WhatsApp","✓ Corrientes débiles CCTV + Alarmas","✓ Soporte prioritario"].map(f=>(
+            <div key={f} style={{ fontSize:13,color:DS.text,marginBottom:5 }}>{f}</div>
+          ))}
+        </div>
+        <div className="card">
+          <div className="card-title">CLAVE PREMIUM</div>
+          <div style={{ display:"flex",gap:8 }}>
+            <input defaultValue="ELEC-2025-PRO-XXXX" type="password" style={{ flex:1 }} />
+            <button className="btn btn-ghost" onClick={()=>notify("Clave validada ✓","ok")}>Validar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP PRINCIPAL ────────────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════
+// SISTEMA DE AUTH, USUARIOS Y ADMINISTRACIÓN
+// ════════════════════════════════════════════════════════════
+
+
+// ============================================================
+// ELECTROCAD PRO — SISTEMA DE USUARIOS, SUSCRIPCIONES Y ADMIN
+// Login • Registro • Panel Admin • Control de acceso por plan
+// ============================================================
+
+
+// ── CLAVE GENERATOR ─────────────────────────────────────────
+function genKey() {
+  const seg = () => Math.random().toString(36).substring(2,6).toUpperCase();
+  return `ELEC-${seg()}-${seg()}-${seg()}`;
+}
+
+// ── BASE DE DATOS SIMULADA (localStorage) ───────────────────
+const DB_KEY = "electrocad_db";
+
+function loadDB() {
+  try {
+    const raw = localStorage.getItem(DB_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  // DB inicial con admin + 3 usuarios de prueba
+  const initial = {
+    users: [
+      {
+        id: "admin",
+        nombre: "Administrador",
+        email: "admin@electrocad.com",
+        password: "admin2025",
+        role: "admin",
+        plan: "admin",
+        licenseKey: "ADMIN-MASTER",
+        estado: "activo",
+        provincia: "Buenos Aires",
+        matricula: "—",
+        cuit: "—",
+        fechaAlta: "2025-01-01",
+        vencimiento: "2099-12-31",
+        proyectos: 0,
+        calculos: 0,
+        presupuestos: 0,
+        ultimoAcceso: new Date().toISOString().split("T")[0],
+      },
+      {
+        id: "u1",
+        nombre: "Carlos Rodríguez",
+        email: "carlos@electro.com.ar",
+        password: "carlos123",
+        role: "user",
+        plan: "premium",
+        licenseKey: genKey(),
+        estado: "activo",
+        provincia: "Buenos Aires",
+        matricula: "04-2847",
+        cuit: "20-28374651-5",
+        fechaAlta: "2025-02-15",
+        vencimiento: "2025-12-31",
+        proyectos: 87,
+        calculos: 215,
+        presupuestos: 43,
+        ultimoAcceso: "2025-06-04",
+      },
+      {
+        id: "u2",
+        nombre: "María González",
+        email: "maria@instalaciones.com",
+        password: "maria123",
+        role: "user",
+        plan: "free",
+        licenseKey: "—",
+        estado: "activo",
+        provincia: "Córdoba",
+        matricula: "08-1133",
+        cuit: "27-19823741-4",
+        fechaAlta: "2025-04-01",
+        vencimiento: "—",
+        proyectos: 12,
+        calculos: 30,
+        presupuestos: 5,
+        ultimoAcceso: "2025-06-03",
+      },
+      {
+        id: "u3",
+        nombre: "Roberto Fernández",
+        email: "roberto@redes.ar",
+        password: "roberto123",
+        role: "user",
+        plan: "premium",
+        licenseKey: genKey(),
+        estado: "suspendido",
+        provincia: "Santa Fe",
+        matricula: "12-0048",
+        cuit: "20-33421190-1",
+        fechaAlta: "2025-03-10",
+        vencimiento: "2025-06-01",
+        proyectos: 34,
+        calculos: 98,
+        presupuestos: 21,
+        ultimoAcceso: "2025-06-01",
+      },
+    ],
+    pagos: [
+      { id:"p1", userId:"u1", nombre:"Carlos Rodríguez", monto:4900, plan:"Premium Anual", fecha:"2025-02-15", estado:"cobrado", metodo:"Transferencia" },
+      { id:"p2", userId:"u3", nombre:"Roberto Fernández", monto:4900, plan:"Premium Anual", fecha:"2025-03-10", estado:"vencido",  metodo:"MercadoPago" },
+      { id:"p3", userId:"u2", nombre:"María González",    monto:0,    plan:"Free",          fecha:"2025-04-01", estado:"free",    metodo:"—" },
+    ],
+    config: {
+      precioFree: 0,
+      precioMensual: 990,
+      precioAnual: 4900,
+      appName: "ElectroCAD PRO",
+      adminEmail: "admin@electrocad.com",
+    }
+  };
+  saveDB(initial);
+  return initial;
+}
+
+function saveDB(db) {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(db)); } catch {}
+}
+
+// ── PLAN FEATURES ────────────────────────────────────────────
+const PLAN_FEATURES = {
+  free: {
+    label: "FREE",
+    color: DS.muted,
+    modules: ["dashboard","calculos","perfil"],
+    maxProyectos: 3,
+    maxPresupuestos: 2,
+  },
+  premium: {
+    label: "PREMIUM",
+    color: DS.accent,
+    modules: ["dashboard","plano","ia","tablero","calculos","solar","corrientes","presupuesto","perfil"],
+    maxProyectos: Infinity,
+    maxPresupuestos: Infinity,
+  },
+  admin: {
+    label: "ADMIN",
+    color: DS.purple,
+    modules: ["__admin__"],
+    maxProyectos: Infinity,
+    maxPresupuestos: Infinity,
+  }
+};
+
+// ────────────────────────────────────────────────────────────
+// COMPONENTES REUTILIZABLES
+// ────────────────────────────────────────────────────────────
+function Notifs({ items }) {
+  return (
+    <div style={{ position:"fixed",bottom:18,right:18,display:"flex",flexDirection:"column",gap:7,zIndex:9999 }}>
+      {items.map(n => (
+        <div key={n.id} style={{ padding:"10px 14px",borderRadius:6,fontSize:13,fontWeight:600,
+          background:DS.panel,border:`1px solid ${DS.border}`,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",
+          maxWidth:290,animation:"slideIn 0.25s ease",
+          borderLeft:`3px solid ${n.type==="ok"?DS.green:n.type==="warn"?DS.yellow:n.type==="err"?DS.red:DS.blue}` }}>
+          {n.msg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function Tag({ children, color=DS.blue, size=10 }) {
+  return <span style={{ background:`${color}22`,color,border:`1px solid ${color}44`,
+    padding:"2px 8px",borderRadius:3,fontSize:size,fontWeight:700,letterSpacing:0.5,whiteSpace:"nowrap" }}>{children}</span>;
+}
+
+function Modal({ title, onClose, children, width=480 }) {
+  return (
+    <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",display:"flex",
+      alignItems:"center",justifyContent:"center",zIndex:1000,padding:20 }}>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:10,
+        width,maxWidth:"100%",maxHeight:"90vh",overflowY:"auto",animation:"modalIn 0.2s ease" }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+          padding:"16px 20px",borderBottom:`1px solid ${DS.border}` }}>
+          <span style={{ fontWeight:700,fontSize:15,letterSpacing:0.5 }}>{title}</span>
+          <button onClick={onClose} style={{ background:"none",border:"none",color:DS.muted,
+            cursor:"pointer",fontSize:18,fontFamily:DS.font }}>✕</button>
+        </div>
+        <div style={{ padding:20 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, color=DS.accent, icon="" }) {
+  return (
+    <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:"16px 18px" }}>
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start" }}>
+        <div>
+          <div style={{ fontSize:10,color:DS.muted,letterSpacing:2,fontWeight:600,marginBottom:8 }}>{label}</div>
+          <div style={{ fontFamily:DS.mono,fontSize:28,fontWeight:700,color }}>{value}</div>
+          {sub && <div style={{ fontSize:11,color:DS.muted,marginTop:4 }}>{sub}</div>}
+        </div>
+        {icon && <div style={{ fontSize:28,opacity:0.4 }}>{icon}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// PANTALLA DE LOGIN / REGISTRO
+// ────────────────────────────────────────────────────────────
+function AuthScreen({ onLogin, notify }) {
+  const [mode, setMode] = useState("login"); // login | register
+  const [form, setForm] = useState({ nombre:"", email:"", password:"", confirm:"", provincia:"Buenos Aires", matricula:"", cuit:"" });
+  const [loading, setLoading] = useState(false);
+  const [showPass, setShowPass] = useState(false);
+
+  const upd = (k,v) => setForm(p=>({...p,[k]:v}));
+
+  const handleLogin = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const db = loadDB();
+      const user = db.users.find(u => u.email===form.email && u.password===form.password);
+      if (!user) { notify("Email o contraseña incorrectos","err"); setLoading(false); return; }
+      if (user.estado==="suspendido") { notify("⚠ Tu cuenta está suspendida. Contactá al administrador.","err"); setLoading(false); return; }
+      // Update last access
+      user.ultimoAcceso = new Date().toISOString().split("T")[0];
+      saveDB(db);
+      notify(`Bienvenido, ${user.nombre.split(" ")[0]}!`,"ok");
+      setLoading(false);
+      onLogin(user);
+    }, 700);
+  };
+
+  const handleRegister = () => {
+    if (!form.nombre || !form.email || !form.password) { notify("Completá todos los campos obligatorios","warn"); return; }
+    if (form.password !== form.confirm) { notify("Las contraseñas no coinciden","err"); return; }
+    if (form.password.length < 6) { notify("La contraseña debe tener al menos 6 caracteres","warn"); return; }
+    setLoading(true);
+    setTimeout(() => {
+      const db = loadDB();
+      if (db.users.find(u=>u.email===form.email)) { notify("Ya existe una cuenta con ese email","err"); setLoading(false); return; }
+      const newUser = {
+        id: "u"+Date.now(),
+        nombre: form.nombre,
+        email: form.email,
+        password: form.password,
+        role: "user",
+        plan: "free",
+        licenseKey: "—",
+        estado: "activo",
+        provincia: form.provincia,
+        matricula: form.matricula,
+        cuit: form.cuit,
+        fechaAlta: new Date().toISOString().split("T")[0],
+        vencimiento: "—",
+        proyectos: 0,
+        calculos: 0,
+        presupuestos: 0,
+        ultimoAcceso: new Date().toISOString().split("T")[0],
+      };
+      db.users.push(newUser);
+      db.pagos.push({ id:"p"+Date.now(), userId:newUser.id, nombre:newUser.nombre, monto:0, plan:"Free", fecha:newUser.fechaAlta, estado:"free", metodo:"—" });
+      saveDB(db);
+      notify("¡Cuenta creada! Ya podés ingresar con tu email y contraseña.","ok");
+      setLoading(false);
+      setMode("login");
+      setForm(p=>({...p,password:"",confirm:""}));
+    }, 800);
+  };
+
+  return (
+    <div style={{ minHeight:"100vh",background:DS.bg,display:"flex",alignItems:"center",justifyContent:"center",padding:20,fontFamily:DS.font }}>
+      {/* Background grid */}
+      <div style={{ position:"fixed",inset:0,backgroundImage:"linear-gradient(rgba(30,38,51,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(30,38,51,0.4) 1px,transparent 1px)",backgroundSize:"40px 40px",pointerEvents:"none" }} />
+
+      <div style={{ width:440,maxWidth:"100%",position:"relative",zIndex:1 }}>
+        {/* Logo */}
+        <div style={{ textAlign:"center",marginBottom:28 }}>
+          <div style={{ width:56,height:56,background:DS.accent,borderRadius:12,display:"flex",
+            alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:900,color:"#000",
+            margin:"0 auto 14px",boxShadow:`0 0 30px ${DS.accent}44` }}>⚡</div>
+          <div style={{ fontSize:24,fontWeight:700,letterSpacing:1,color:DS.text }}>ElectroCAD PRO</div>
+          <div style={{ fontSize:10,color:DS.muted,letterSpacing:3,fontFamily:DS.mono,marginTop:4 }}>SOFTWARE PARA ELECTRICISTAS PROFESIONALES</div>
+        </div>
+
+        {/* Card */}
+        <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:12,overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,0.5)" }}>
+          {/* Tabs */}
+          <div style={{ display:"flex",borderBottom:`1px solid ${DS.border}` }}>
+            {[{id:"login",label:"Iniciar Sesión"},{id:"register",label:"Crear Cuenta"}].map(t=>(
+              <div key={t.id} onClick={()=>setMode(t.id)} style={{ flex:1,padding:"13px",textAlign:"center",
+                cursor:"pointer",fontSize:13,fontWeight:700,letterSpacing:0.5,transition:"all 0.2s",
+                borderBottom:`2px solid ${mode===t.id?DS.accent:"transparent"}`,
+                color:mode===t.id?DS.accent:DS.muted,background:mode===t.id?"rgba(245,166,35,0.06)":"transparent" }}>
+                {t.label}
+              </div>
+            ))}
+          </div>
+
+          <div style={{ padding:24 }}>
+            {mode==="login" && (
+              <>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>EMAIL</label>
+                  <input value={form.email} onChange={e=>upd("email",e.target.value)}
+                    placeholder="tu@email.com" type="email"
+                    style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,
+                      padding:"10px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }}
+                    onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+                </div>
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>CONTRASEÑA</label>
+                  <div style={{ position:"relative" }}>
+                    <input value={form.password} onChange={e=>upd("password",e.target.value)}
+                      type={showPass?"text":"password"} placeholder="••••••••"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,
+                        padding:"10px 40px 10px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }}
+                      onKeyDown={e=>e.key==="Enter"&&handleLogin()} />
+                    <button onClick={()=>setShowPass(s=>!s)} style={{ position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",
+                      background:"none",border:"none",color:DS.muted,cursor:"pointer",fontSize:14 }}>{showPass?"🙈":"👁"}</button>
+                  </div>
+                </div>
+                <button onClick={handleLogin} disabled={loading} style={{ width:"100%",padding:12,borderRadius:8,border:"none",
+                  background:loading?DS.border:`linear-gradient(135deg,${DS.accent},${DS.accentDim})`,color:loading?DS.muted:"#000",
+                  fontFamily:DS.font,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",letterSpacing:1 }}>
+                  {loading?"Verificando...":"⚡ Ingresar"}
+                </button>
+                {/* Demo hint */}
+                <div style={{ marginTop:16,padding:"10px 12px",background:`${DS.surface}`,borderRadius:6,
+                  border:`1px dashed ${DS.border}` }}>
+                  <div style={{ fontSize:10,color:DS.muted,letterSpacing:1,marginBottom:6,fontWeight:600 }}>CUENTAS DE DEMO</div>
+                  {[
+                    { label:"Admin", email:"admin@electrocad.com", pass:"admin2025", color:DS.purple },
+                    { label:"Premium", email:"carlos@electro.com.ar", pass:"carlos123", color:DS.accent },
+                    { label:"Free", email:"maria@instalaciones.com", pass:"maria123", color:DS.muted },
+                  ].map(d=>(
+                    <div key={d.label} onClick={()=>setForm(p=>({...p,email:d.email,password:d.pass}))}
+                      style={{ display:"flex",alignItems:"center",gap:8,padding:"4px 0",cursor:"pointer" }}>
+                      <Tag color={d.color}>{d.label}</Tag>
+                      <span style={{ fontSize:11,color:DS.muted,fontFamily:DS.mono }}>{d.email}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {mode==="register" && (
+              <>
+                <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12 }}>
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>NOMBRE COMPLETO *</label>
+                    <input value={form.nombre} onChange={e=>upd("nombre",e.target.value)} placeholder="Juan Pérez"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+                  </div>
+                  <div style={{ gridColumn:"1/-1" }}>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>EMAIL *</label>
+                    <input value={form.email} onChange={e=>upd("email",e.target.value)} type="email" placeholder="tu@email.com"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>CONTRASEÑA *</label>
+                    <input value={form.password} onChange={e=>upd("password",e.target.value)} type="password" placeholder="Mín. 6 caracteres"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>REPETIR CONTRASEÑA *</label>
+                    <input value={form.confirm} onChange={e=>upd("confirm",e.target.value)} type="password" placeholder="Repetí tu contraseña"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>MATRÍCULA</label>
+                    <input value={form.matricula} onChange={e=>upd("matricula",e.target.value)} placeholder="XX-XXXX"
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>PROVINCIA</label>
+                    <select value={form.provincia} onChange={e=>upd("provincia",e.target.value)}
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"9px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }}>
+                      {["Buenos Aires","Córdoba","Santa Fe","Mendoza","Salta","Tucumán","Entre Ríos","Corrientes","Neuquén","Río Negro","Chubut","Santa Cruz","Tierra del Fuego","La Pampa","San Luis","San Juan","La Rioja","Catamarca","Jujuy","Misiones","Chaco","Formosa"].map(p=><option key={p}>{p}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button onClick={handleRegister} disabled={loading} style={{ width:"100%",padding:12,borderRadius:8,border:"none",
+                  background:loading?DS.border:`linear-gradient(135deg,${DS.accent},${DS.accentDim})`,color:loading?DS.muted:"#000",
+                  fontFamily:DS.font,fontSize:15,fontWeight:700,cursor:loading?"not-allowed":"pointer",letterSpacing:1,marginBottom:10 }}>
+                  {loading?"Creando cuenta...":"Crear Cuenta — Plan Free"}
+                </button>
+                <div style={{ fontSize:11,color:DS.muted,textAlign:"center",lineHeight:1.5 }}>
+                  Al registrarte obtenés acceso al <strong style={{ color:DS.text }}>plan gratuito</strong>. Para activar Premium, contactá al administrador o activá tu clave desde Mi Perfil.
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign:"center",marginTop:16,fontSize:10,color:DS.muted,fontFamily:DS.mono,letterSpacing:1 }}>
+          AEA 90364 • ARGENTINA • {new Date().getFullYear()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// PANEL DE ADMINISTRADOR
+// ────────────────────────────────────────────────────────────
+function AdminPanel({ adminUser, onLogout, notify }) {
+  const [tab, setTab] = useState("dashboard");
+  const [db, setDb] = useState(loadDB);
+  const [modalUsuario, setModalUsuario] = useState(null); // null | "nuevo" | user object
+  const [modalPago, setModalPago] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
+  const [formUser, setFormUser] = useState({});
+
+  const refresh = () => { const d = loadDB(); setDb({...d}); };
+  const persist = (newDb) => { saveDB(newDb); setDb({...newDb}); };
+
+  // Stats
+  const totalUsers = db.users.filter(u=>u.role!=="admin").length;
+  const premium = db.users.filter(u=>u.plan==="premium"&&u.estado==="activo").length;
+  const free = db.users.filter(u=>u.plan==="free").length;
+  const suspendidos = db.users.filter(u=>u.estado==="suspendido").length;
+  const facturadoTotal = db.pagos.filter(p=>p.estado==="cobrado").reduce((s,p)=>s+p.monto,0);
+
+  const usuariosFiltrados = db.users.filter(u=>u.role!=="admin"&&(
+    u.nombre.toLowerCase().includes(busqueda.toLowerCase())||
+    u.email.toLowerCase().includes(busqueda.toLowerCase())||
+    u.provincia.toLowerCase().includes(busqueda.toLowerCase())
+  ));
+
+  // Acciones sobre usuario
+  const accion = (userId, accion) => {
+    const newDb = {...db, users:[...db.users]};
+    const u = newDb.users.find(u=>u.id===userId);
+    if (!u) return;
+    if (accion==="suspender") { u.estado="suspendido"; notify(`${u.nombre} suspendido`,"warn"); }
+    if (accion==="activar")   { u.estado="activo";     notify(`${u.nombre} activado`,"ok");    }
+    if (accion==="premium") {
+      u.plan="premium"; u.estado="activo";
+      u.licenseKey=genKey();
+      u.vencimiento=new Date(Date.now()+365*24*3600*1000).toISOString().split("T")[0];
+      newDb.pagos.push({ id:"p"+Date.now(), userId:u.id, nombre:u.nombre, monto:db.config.precioAnual, plan:"Premium Anual", fecha:new Date().toISOString().split("T")[0], estado:"cobrado", metodo:"Manual Admin" });
+      notify(`${u.nombre} → Premium activado. Clave: ${u.licenseKey}`,"ok");
+    }
+    if (accion==="free") { u.plan="free"; u.licenseKey="—"; u.vencimiento="—"; notify(`${u.nombre} → Plan Free`,"info"); }
+    if (accion==="eliminar") {
+      newDb.users = newDb.users.filter(x=>x.id!==userId);
+      newDb.pagos = newDb.pagos.filter(x=>x.userId!==userId);
+      notify(`Usuario eliminado`,"warn");
+    }
+    if (accion==="nuevaclave") { u.licenseKey=genKey(); notify(`Nueva clave: ${u.licenseKey}`,"ok"); }
+    persist(newDb);
+  };
+
+  // Crear usuario desde admin
+  const crearUsuario = () => {
+    const { nombre,email,password,plan,provincia,matricula,cuit } = formUser;
+    if (!nombre||!email||!password) { notify("Completá nombre, email y contraseña","warn"); return; }
+    const newDb = {...db,users:[...db.users]};
+    if (newDb.users.find(u=>u.email===email)) { notify("Ya existe ese email","err"); return; }
+    const key = plan==="premium"?genKey():"—";
+    const newUser = {
+      id:"u"+Date.now(), nombre, email, password, role:"user", plan:plan||"free",
+      licenseKey:key, estado:"activo", provincia:provincia||"Buenos Aires",
+      matricula:matricula||"—", cuit:cuit||"—",
+      fechaAlta:new Date().toISOString().split("T")[0],
+      vencimiento:plan==="premium"?new Date(Date.now()+365*24*3600*1000).toISOString().split("T")[0]:"—",
+      proyectos:0,calculos:0,presupuestos:0,
+      ultimoAcceso:new Date().toISOString().split("T")[0],
+    };
+    newDb.users.push(newUser);
+    if (plan==="premium") newDb.pagos.push({ id:"p"+Date.now(),userId:newUser.id,nombre,monto:db.config.precioAnual,plan:"Premium Anual",fecha:newUser.fechaAlta,estado:"cobrado",metodo:"Manual Admin" });
+    persist(newDb);
+    notify(`Usuario ${nombre} creado${plan==="premium"?` — Clave: ${key}`:""}`, "ok");
+    setModalUsuario(null);
+    setFormUser({});
+  };
+
+  const planTag = (p,estado) => {
+    if (estado==="suspendido") return <Tag color={DS.red}>SUSPENDIDO</Tag>;
+    if (p==="premium") return <Tag color={DS.accent}>PREMIUM</Tag>;
+    return <Tag color={DS.muted}>FREE</Tag>;
+  };
+
+  const tabs = [
+    {id:"dashboard",label:"Dashboard",icon:"⬡"},
+    {id:"usuarios",  label:"Usuarios",  icon:"◈"},
+    {id:"pagos",     label:"Pagos",     icon:"₿"},
+    {id:"config",    label:"Config.",   icon:"⚙"},
+  ];
+
+  return (
+    <div style={{ display:"flex",height:"100vh",fontFamily:DS.font,background:DS.bg,color:DS.text }}>
+      {/* Sidebar admin */}
+      <div style={{ width:200,background:DS.panel,borderRight:`1px solid ${DS.border}`,display:"flex",flexDirection:"column",flexShrink:0 }}>
+        <div style={{ padding:"14px 16px",borderBottom:`1px solid ${DS.border}` }}>
+          <div style={{ display:"flex",alignItems:"center",gap:10 }}>
+            <div style={{ width:30,height:30,borderRadius:6,background:DS.purple,display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,color:"#fff",fontWeight:700,flexShrink:0 }}>A</div>
+            <div>
+              <div style={{ fontSize:13,fontWeight:700,letterSpacing:0.5 }}>ElectroCAD</div>
+              <div style={{ fontSize:8,color:DS.muted,fontFamily:DS.mono,letterSpacing:2 }}>ADMIN PANEL</div>
+            </div>
+          </div>
+        </div>
+        <nav style={{ flex:1,padding:"8px 0" }}>
+          {tabs.map(t=>(
+            <div key={t.id} onClick={()=>setTab(t.id)} style={{ display:"flex",alignItems:"center",gap:10,
+              padding:"10px 14px",cursor:"pointer",borderLeft:`3px solid ${tab===t.id?DS.purple:"transparent"}`,
+              background:tab===t.id?"rgba(168,85,247,0.1)":"transparent",color:tab===t.id?DS.purple:DS.muted,
+              fontSize:13,fontWeight:600,letterSpacing:0.5,transition:"all 0.15s" }}>
+              <span style={{ fontSize:16 }}>{t.icon}</span>{t.label}
+            </div>
+          ))}
+        </nav>
+        <div style={{ padding:12,borderTop:`1px solid ${DS.border}` }}>
+          <div style={{ fontSize:11,color:DS.muted,marginBottom:6 }}>Admin: <strong style={{ color:DS.text }}>Sistema</strong></div>
+          <button onClick={onLogout} style={{ width:"100%",padding:"7px",background:"rgba(239,68,68,0.1)",
+            border:"1px solid rgba(239,68,68,0.3)",color:DS.red,borderRadius:5,cursor:"pointer",
+            fontFamily:DS.font,fontSize:12,fontWeight:600 }}>↩ Cerrar Sesión</button>
+        </div>
+      </div>
+
+      {/* Main admin */}
+      <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+        {/* Topbar */}
+        <div style={{ height:50,background:DS.panel,borderBottom:`1px solid ${DS.border}`,
+          display:"flex",alignItems:"center",padding:"0 20px",gap:12 }}>
+          <Tag color={DS.purple}>PANEL ADMINISTRADOR</Tag>
+          <span style={{ fontSize:14,fontWeight:700,letterSpacing:0.5 }}>{tabs.find(t=>t.id===tab)?.label.toUpperCase()}</span>
+          <div style={{ marginLeft:"auto",display:"flex",gap:10,alignItems:"center" }}>
+            <span style={{ fontSize:11,color:DS.muted,fontFamily:DS.mono }}>{new Date().toLocaleDateString("es-AR")}</span>
+            <button onClick={refresh} style={{ padding:"5px 10px",background:DS.surface,border:`1px solid ${DS.border}`,
+              color:DS.muted,borderRadius:5,cursor:"pointer",fontFamily:DS.font,fontSize:11 }}>↺ Actualizar</button>
+          </div>
+        </div>
+
+        <div style={{ flex:1,overflowY:"auto",padding:20 }}>
+
+          {/* ── DASHBOARD ADMIN ── */}
+          {tab==="dashboard" && (
+            <div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:14,marginBottom:20 }}>
+                <StatCard label="USUARIOS TOTALES" value={totalUsers} icon="◈" />
+                <StatCard label="PLAN PREMIUM" value={premium} color={DS.accent} icon="⚡" />
+                <StatCard label="PLAN FREE" value={free} color={DS.muted} icon="○" />
+                <StatCard label="SUSPENDIDOS" value={suspendidos} color={DS.red} icon="✕" />
+                <StatCard label="FACTURADO TOTAL" value={`$${facturadoTotal.toLocaleString("es-AR")}`} color={DS.green} icon="₿" />
+              </div>
+
+              {/* Últimos usuarios */}
+              <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14 }}>
+                <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:16 }}>
+                  <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>ÚLTIMOS USUARIOS REGISTRADOS</div>
+                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                    <thead><tr>{["NOMBRE","PLAN","FECHA ALTA","ESTADO"].map(h=><th key={h} style={{ padding:"5px 8px",textAlign:"left",fontSize:9,letterSpacing:1.5,color:DS.muted,borderBottom:`1px solid ${DS.border}`,fontWeight:600 }}>{h}</th>)}</tr></thead>
+                    <tbody>{db.users.filter(u=>u.role!=="admin").slice(-5).reverse().map(u=>(
+                      <tr key={u.id} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+                        <td style={{ padding:"7px 8px",fontWeight:600 }}>{u.nombre}</td>
+                        <td style={{ padding:"7px 8px" }}>{planTag(u.plan,u.estado)}</td>
+                        <td style={{ padding:"7px 8px",fontFamily:DS.mono,fontSize:11,color:DS.muted }}>{u.fechaAlta}</td>
+                        <td style={{ padding:"7px 8px" }}>{u.estado==="activo"?<Tag color={DS.green}>ACTIVO</Tag>:<Tag color={DS.red}>SUSP.</Tag>}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+                <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:16 }}>
+                  <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>ÚLTIMOS PAGOS</div>
+                  <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+                    <thead><tr>{["USUARIO","PLAN","MONTO","ESTADO"].map(h=><th key={h} style={{ padding:"5px 8px",textAlign:"left",fontSize:9,letterSpacing:1.5,color:DS.muted,borderBottom:`1px solid ${DS.border}`,fontWeight:600 }}>{h}</th>)}</tr></thead>
+                    <tbody>{db.pagos.slice(-5).reverse().map(p=>(
+                      <tr key={p.id} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+                        <td style={{ padding:"7px 8px",fontWeight:600 }}>{p.nombre.split(" ")[0]}</td>
+                        <td style={{ padding:"7px 8px",fontSize:11 }}>{p.plan}</td>
+                        <td style={{ padding:"7px 8px",fontFamily:DS.mono,color:DS.accent }}>{p.monto?`$${p.monto.toLocaleString("es-AR")}`:"—"}</td>
+                        <td style={{ padding:"7px 8px" }}>{p.estado==="cobrado"?<Tag color={DS.green}>COBRADO</Tag>:p.estado==="vencido"?<Tag color={DS.red}>VENCIDO</Tag>:<Tag color={DS.muted}>FREE</Tag>}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Acciones rápidas */}
+              <div style={{ marginTop:14,background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:16 }}>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>ACCIONES RÁPIDAS</div>
+                <div style={{ display:"flex",gap:10,flexWrap:"wrap" }}>
+                  <button onClick={()=>setTab("usuarios")} style={{ padding:"9px 18px",background:DS.accent,color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:12,fontWeight:700 }}>◈ Gestionar Usuarios</button>
+                  <button onClick={()=>{setModalUsuario("nuevo");setFormUser({plan:"premium"});}} style={{ padding:"9px 18px",background:"rgba(168,85,247,0.15)",color:DS.purple,border:`1px solid ${DS.purple}44`,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:12,fontWeight:700 }}>+ Nuevo Usuario</button>
+                  <button onClick={()=>setTab("pagos")} style={{ padding:"9px 18px",background:"rgba(34,197,94,0.1)",color:DS.green,border:`1px solid ${DS.green}44`,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:12,fontWeight:700 }}>₿ Ver Pagos</button>
+                  <button onClick={()=>setTab("config")} style={{ padding:"9px 18px",background:DS.surface,color:DS.muted,border:`1px solid ${DS.border}`,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:12,fontWeight:700 }}>⚙ Configuración</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── USUARIOS ── */}
+          {tab==="usuarios" && (
+            <div>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14 }}>
+                <div style={{ display:"flex",gap:10,alignItems:"center" }}>
+                  <input value={busqueda} onChange={e=>setBusqueda(e.target.value)} placeholder="Buscar por nombre, email o provincia..."
+                    style={{ background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"8px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none",width:300 }} />
+                  <Tag color={DS.muted}>{usuariosFiltrados.length} resultados</Tag>
+                </div>
+                <button onClick={()=>{setModalUsuario("nuevo");setFormUser({plan:"premium"});}}
+                  style={{ padding:"9px 18px",background:DS.accent,color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700 }}>
+                  + Nuevo Usuario
+                </button>
+              </div>
+
+              <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8 }}>
+                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
+                  <thead>
+                    <tr>{["NOMBRE / EMAIL","MATRÍCULA","PROVINCIA","PLAN","ÚLTIMO ACCESO","CLAVE PREMIUM","ACCIONES"].map(h=>(
+                      <th key={h} style={{ padding:"8px 12px",textAlign:"left",fontSize:9,letterSpacing:1.5,color:DS.muted,borderBottom:`1px solid ${DS.border}`,fontWeight:600 }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {usuariosFiltrados.map(u=>(
+                      <tr key={u.id} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+                        <td style={{ padding:"10px 12px" }}>
+                          <div style={{ fontWeight:700 }}>{u.nombre}</div>
+                          <div style={{ fontSize:11,color:DS.muted,fontFamily:DS.mono }}>{u.email}</div>
+                        </td>
+                        <td style={{ padding:"10px 12px",fontFamily:DS.mono,fontSize:12 }}>{u.matricula}</td>
+                        <td style={{ padding:"10px 12px",fontSize:12,color:DS.muted }}>{u.provincia}</td>
+                        <td style={{ padding:"10px 12px" }}>{planTag(u.plan,u.estado)}</td>
+                        <td style={{ padding:"10px 12px",fontFamily:DS.mono,fontSize:11,color:DS.muted }}>{u.ultimoAcceso}</td>
+                        <td style={{ padding:"10px 12px",fontFamily:DS.mono,fontSize:10,color:u.licenseKey!=="—"?DS.accent:DS.muted }}>{u.licenseKey}</td>
+                        <td style={{ padding:"10px 12px" }}>
+                          <div style={{ display:"flex",gap:4,flexWrap:"wrap" }}>
+                            {u.estado==="activo"
+                              ? <button onClick={()=>accion(u.id,"suspender")} style={{ padding:"4px 8px",background:"rgba(239,68,68,0.1)",color:DS.red,border:"1px solid rgba(239,68,68,0.3)",borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>Suspender</button>
+                              : <button onClick={()=>accion(u.id,"activar")} style={{ padding:"4px 8px",background:"rgba(34,197,94,0.1)",color:DS.green,border:"1px solid rgba(34,197,94,0.3)",borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>Activar</button>
+                            }
+                            {u.plan!=="premium"
+                              ? <button onClick={()=>accion(u.id,"premium")} style={{ padding:"4px 8px",background:"rgba(245,166,35,0.1)",color:DS.accent,border:"1px solid rgba(245,166,35,0.3)",borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>→ Premium</button>
+                              : <button onClick={()=>accion(u.id,"free")} style={{ padding:"4px 8px",background:"rgba(100,116,139,0.1)",color:DS.muted,border:`1px solid ${DS.border}`,borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>→ Free</button>
+                            }
+                            {u.plan==="premium" && <button onClick={()=>accion(u.id,"nuevaclave")} style={{ padding:"4px 8px",background:"rgba(168,85,247,0.1)",color:DS.purple,border:"1px solid rgba(168,85,247,0.3)",borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>↺ Clave</button>}
+                            <button onClick={()=>{if(window.confirm(`¿Eliminar a ${u.nombre}?`)) accion(u.id,"eliminar");}} style={{ padding:"4px 8px",background:"rgba(239,68,68,0.05)",color:DS.red,border:"1px solid rgba(239,68,68,0.2)",borderRadius:4,cursor:"pointer",fontFamily:DS.font,fontSize:10,fontWeight:600 }}>🗑</button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── PAGOS ── */}
+          {tab==="pagos" && (
+            <div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:18 }}>
+                <StatCard label="TOTAL COBRADO" value={`$${facturadoTotal.toLocaleString("es-AR")}`} color={DS.green} icon="₿" />
+                <StatCard label="CLIENTES PREMIUM" value={premium} color={DS.accent} icon="⚡" />
+                <StatCard label="PAGOS VENCIDOS" value={db.pagos.filter(p=>p.estado==="vencido").length} color={DS.red} icon="⚠" />
+                <StatCard label="PRECIO ANUAL" value={`$${db.config.precioAnual?.toLocaleString("es-AR")}`} color={DS.blue} icon="◎" />
+              </div>
+              <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8 }}>
+                <div style={{ padding:"12px 16px",borderBottom:`1px solid ${DS.border}`,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                  <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted }}>HISTORIAL DE PAGOS</div>
+                </div>
+                <table style={{ width:"100%",borderCollapse:"collapse",fontSize:13 }}>
+                  <thead><tr>{["USUARIO","PLAN","MONTO","MÉTODO","FECHA","ESTADO"].map(h=><th key={h} style={{ padding:"8px 12px",textAlign:"left",fontSize:9,letterSpacing:1.5,color:DS.muted,borderBottom:`1px solid ${DS.border}`,fontWeight:600 }}>{h}</th>)}</tr></thead>
+                  <tbody>{db.pagos.map(p=>(
+                    <tr key={p.id} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+                      <td style={{ padding:"9px 12px",fontWeight:600 }}>{p.nombre}</td>
+                      <td style={{ padding:"9px 12px",fontSize:12 }}>{p.plan}</td>
+                      <td style={{ padding:"9px 12px",fontFamily:DS.mono,color:DS.accent }}>{p.monto?`ARS ${p.monto.toLocaleString("es-AR")}`:"—"}</td>
+                      <td style={{ padding:"9px 12px",fontSize:12,color:DS.muted }}>{p.metodo}</td>
+                      <td style={{ padding:"9px 12px",fontFamily:DS.mono,fontSize:11,color:DS.muted }}>{p.fecha}</td>
+                      <td style={{ padding:"9px 12px" }}>{p.estado==="cobrado"?<Tag color={DS.green}>COBRADO</Tag>:p.estado==="vencido"?<Tag color={DS.red}>VENCIDO</Tag>:<Tag color={DS.muted}>FREE</Tag>}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── CONFIG ── */}
+          {tab==="config" && (
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:16 }}>
+              <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18 }}>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:14 }}>PRECIOS DE SUSCRIPCIÓN</div>
+                {[
+                  {label:"PRECIO MENSUAL (ARS)",key:"precioMensual"},
+                  {label:"PRECIO ANUAL (ARS)",key:"precioAnual"},
+                ].map(f=>(
+                  <div key={f.key} style={{ marginBottom:12 }}>
+                    <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>{f.label}</label>
+                    <input type="number" defaultValue={db.config[f.key]}
+                      onChange={e=>{const d=loadDB();d.config[f.key]=+e.target.value;saveDB(d);}}
+                      style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"8px 12px",borderRadius:6,fontFamily:DS.mono,fontSize:14,outline:"none" }} />
+                  </div>
+                ))}
+                <button onClick={()=>notify("Precios actualizados","ok")}
+                  style={{ padding:"9px 18px",background:DS.accent,color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700 }}>
+                  Guardar Precios
+                </button>
+              </div>
+              <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18 }}>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:14 }}>FUNCIONES POR PLAN</div>
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}><Tag color={DS.muted}>FREE</Tag></div>
+                  {["Dashboard","Cálculos","Mi Perfil"].map(f=><div key={f} style={{ fontSize:12,color:DS.muted,padding:"3px 0" }}>✓ {f}</div>)}
+                  {["Plano Virtual","IA","Simulador DIN","Solar","Corrientes Débiles","Presupuesto"].map(f=><div key={f} style={{ fontSize:12,color:DS.red,padding:"3px 0" }}>✕ {f}</div>)}
+                </div>
+                <div style={{ height:1,background:DS.border,margin:"12px 0" }} />
+                <div>
+                  <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}><Tag color={DS.accent}>PREMIUM</Tag></div>
+                  {["Dashboard","Plano Virtual","Análisis IA","Simulador DIN","Cálculos","Solar FV","Corrientes Débiles","Presupuesto","Mi Perfil"].map(f=><div key={f} style={{ fontSize:12,color:DS.green,padding:"3px 0" }}>✓ {f}</div>)}
+                </div>
+              </div>
+              <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18,gridColumn:"1/-1" }}>
+                <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:14 }}>RESET DE BASE DE DATOS</div>
+                <div style={{ fontSize:13,color:DS.muted,marginBottom:12 }}>Esto eliminará todos los usuarios y pagos y restaurará la base de datos al estado inicial de demo.</div>
+                <button onClick={()=>{if(window.confirm("¿Resetear toda la DB? Esta acción no se puede deshacer.")){localStorage.removeItem(DB_KEY);setDb(loadDB());notify("DB reseteada","warn");}}}
+                  style={{ padding:"9px 18px",background:"rgba(239,68,68,0.1)",color:DS.red,border:"1px solid rgba(239,68,68,0.3)",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700 }}>
+                  ⚠ Reset de Demo DB
+                </button>
+              </div>
+            </div>
+          )}
+
+        </div>
+      </div>
+
+      {/* MODAL NUEVO USUARIO */}
+      {modalUsuario==="nuevo" && (
+        <Modal title="Crear Nuevo Usuario" onClose={()=>{setModalUsuario(null);setFormUser({});}}>
+          <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            {[
+              {label:"NOMBRE COMPLETO *",key:"nombre",placeholder:"Juan Pérez",col:"1/-1"},
+              {label:"EMAIL *",key:"email",placeholder:"juan@email.com",type:"email",col:"1/-1"},
+              {label:"CONTRASEÑA *",key:"password",placeholder:"mín. 6 caracteres",type:"password"},
+              {label:"MATRÍCULA",key:"matricula",placeholder:"XX-XXXX"},
+            ].map(f=>(
+              <div key={f.key} style={{ gridColumn:f.col||"auto" }}>
+                <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>{f.label}</label>
+                <input type={f.type||"text"} placeholder={f.placeholder} value={formUser[f.key]||""} onChange={e=>setFormUser(p=>({...p,[f.key]:e.target.value}))}
+                  style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"8px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }} />
+              </div>
+            ))}
+            <div>
+              <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>PLAN</label>
+              <select value={formUser.plan||"premium"} onChange={e=>setFormUser(p=>({...p,plan:e.target.value}))}
+                style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"8px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }}>
+                <option value="premium">Premium</option>
+                <option value="free">Free</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>PROVINCIA</label>
+              <select value={formUser.provincia||"Buenos Aires"} onChange={e=>setFormUser(p=>({...p,provincia:e.target.value}))}
+                style={{ width:"100%",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.text,padding:"8px 12px",borderRadius:6,fontFamily:DS.font,fontSize:13,outline:"none" }}>
+                {["Buenos Aires","Córdoba","Santa Fe","Mendoza","Salta","Tucumán","Entre Ríos","Neuquén","Río Negro"].map(p=><option key={p}>{p}</option>)}
+              </select>
+            </div>
+          </div>
+          <div style={{ display:"flex",gap:10,marginTop:18,justifyContent:"flex-end" }}>
+            <button onClick={()=>{setModalUsuario(null);setFormUser({});}} style={{ padding:"9px 18px",background:DS.surface,border:`1px solid ${DS.border}`,color:DS.muted,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:600 }}>Cancelar</button>
+            <button onClick={crearUsuario} style={{ padding:"9px 18px",background:DS.accent,color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700 }}>Crear Usuario</button>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// PANTALLA UPGRADE (usuarios FREE intentan acceder a módulos Premium)
+// ────────────────────────────────────────────────────────────
+function UpgradeWall({ moduleName, onBack }) {
+  return (
+    <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      minHeight:"60vh",textAlign:"center",padding:40 }}>
+      <div style={{ fontSize:48,marginBottom:16 }}>🔒</div>
+      <div style={{ fontSize:22,fontWeight:700,marginBottom:8 }}>Módulo Premium</div>
+      <div style={{ fontSize:14,color:DS.muted,marginBottom:24,maxWidth:400,lineHeight:1.6 }}>
+        <strong style={{ color:DS.text }}>{moduleName}</strong> está disponible únicamente en el plan Premium. Contactá al administrador para activar tu suscripción.
+      </div>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.accent}44`,borderRadius:10,padding:"20px 30px",marginBottom:20 }}>
+        <div style={{ fontSize:10,color:DS.muted,letterSpacing:2,marginBottom:8 }}>PLAN PREMIUM INCLUYE</div>
+        {["Planos ilimitados","Análisis IA con foto","Simulador DIN","Solar FV","CCTV + Alarmas","Presupuesto PDF + WhatsApp"].map(f=>(
+          <div key={f} style={{ fontSize:13,color:DS.green,padding:"3px 0" }}>✓ {f}</div>
+        ))}
+        <div style={{ marginTop:12,fontFamily:DS.mono,fontSize:22,fontWeight:700,color:DS.accent }}>ARS 4.900 / año</div>
+      </div>
+      <button onClick={onBack} style={{ padding:"10px 24px",background:DS.surface,border:`1px solid ${DS.border}`,
+        color:DS.muted,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:600 }}>
+        ← Volver al Dashboard
+      </button>
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// APP PRINCIPAL CON AUTH
+// ────────────────────────────────────────────────────────────
+function ElectroCADAuth() {
+  const [user, setUser] = useState(null);
+  const [notifs, setNotifs] = useState([]);
+  const [activeModule, setActiveModule] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const notify = useCallback((msg, type="info") => {
+    const id = Date.now();
+    setNotifs(n=>[...n,{id,msg,type}]);
+    setTimeout(()=>setNotifs(n=>n.filter(x=>x.id!==id)), 3500);
+  }, []);
+
+  const handleLogin = useCallback((u) => {
+    setUser(u);
+    setActiveModule(u.role==="admin"?"dashboard":"dashboard");
+  }, []);
+
+  const handleLogout = () => {
+    setUser(null);
+    setActiveModule("dashboard");
+    notify("Sesión cerrada","info");
+  };
+
+  const canAccess = (modId) => {
+    if (!user) return false;
+    if (user.role==="admin") return true;
+    return PLAN_FEATURES[user.plan]?.modules.includes(modId);
+  };
+
+  const modules = [
+    { id:"dashboard",   label:"Dashboard",         icon:"⬡" },
+    { id:"plano",       label:"Plano Virtual",      icon:"⊞", premium:true },
+    { id:"ia",          label:"Análisis IA",        icon:"🤖", premium:true },
+    { id:"tablero",     label:"Simulador DIN",      icon:"⚡", premium:true },
+    { id:"calculos",    label:"Cálculos",           icon:"∑" },
+    { id:"solar",       label:"Solar FV",           icon:"☀", premium:true },
+    { id:"corrientes",  label:"Corrientes Débiles", icon:"◉", premium:true },
+    { id:"presupuesto", label:"Presupuesto",        icon:"₿", premium:true },
+    { id:"perfil",      label:"Mi Perfil",          icon:"◈" },
+  ];
+
+  // Pantalla de login
+  if (!user) return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{background:${DS.bg};color:${DS.text};font-family:${DS.font};}
+        @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes modalIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+        input:focus,select:focus{border-color:${DS.accent}!important;box-shadow:0 0 0 2px ${DS.accent}22;}
+      `}</style>
+      <AuthScreen onLogin={handleLogin} notify={notify} />
+      <Notifs items={notifs} />
+    </>
+  );
+
+  // Panel admin
+  if (user.role==="admin") return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{background:${DS.bg};color:${DS.text};font-family:${DS.font};overflow:hidden;}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:${DS.surface}}::-webkit-scrollbar-thumb{background:${DS.border};border-radius:2px}
+        @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes modalIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+        input:focus,select:focus{border-color:${DS.accent}!important;}
+      `}</style>
+      <AdminPanel adminUser={user} onLogout={handleLogout} notify={notify} />
+      <Notifs items={notifs} />
+    </>
+  );
+
+  // App de usuario (free o premium)
+  const planInfo = PLAN_FEATURES[user.plan];
+  const modLabel = modules.find(m=>m.id===activeModule)?.label||"";
+  const showUpgrade = !canAccess(activeModule);
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{background:${DS.bg};color:${DS.text};font-family:${DS.font};overflow:hidden;}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:${DS.surface}}::-webkit-scrollbar-thumb{background:${DS.border};border-radius:2px}
+        @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        input,select{background:${DS.surface};border:1px solid ${DS.border};color:${DS.text};padding:8px 12px;border-radius:6px;font-family:${DS.font};font-size:13px;outline:none;width:100%;}
+        input:focus,select:focus{border-color:${DS.accent};}
+        label{font-size:10px;color:${DS.muted};letter-spacing:1px;font-weight:600;display:block;margin-bottom:4px;}
+      `}</style>
+
+      <div style={{ display:"flex",height:"100vh",overflow:"hidden" }}>
+        {/* SIDEBAR */}
+        <div style={{ width:sidebarOpen?"215px":"58px",background:DS.panel,borderRight:`1px solid ${DS.border}`,
+          display:"flex",flexDirection:"column",transition:"width 0.25s",flexShrink:0 }}>
+          <div style={{ padding:"13px 14px",borderBottom:`1px solid ${DS.border}`,display:"flex",alignItems:"center",gap:10,overflow:"hidden" }}>
+            <div style={{ width:30,height:30,borderRadius:6,background:DS.accent,display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,fontWeight:900,color:"#000",flexShrink:0 }}>⚡</div>
+            {sidebarOpen && <div><div style={{ fontSize:13,fontWeight:700,letterSpacing:0.5,whiteSpace:"nowrap" }}>ElectroCAD</div><div style={{ fontSize:8,color:DS.muted,fontFamily:DS.mono,letterSpacing:2 }}>PRO v2.0</div></div>}
+          </div>
+          <nav style={{ flex:1,padding:"6px 0",overflowY:"auto" }}>
+            {modules.map(m => {
+              const accessible = canAccess(m.id);
+              return (
+                <div key={m.id} onClick={()=>setActiveModule(m.id)}
+                  style={{ display:"flex",alignItems:"center",gap:10,padding:"10px 13px",cursor:"pointer",
+                    borderLeft:`3px solid ${activeModule===m.id?DS.accent:"transparent"}`,
+                    background:activeModule===m.id?"rgba(245,166,35,0.1)":"transparent",
+                    color:activeModule===m.id?DS.accent:accessible?DS.text:DS.muted,
+                    fontSize:12,fontWeight:600,letterSpacing:0.5,transition:"all 0.15s",
+                    opacity:accessible?1:0.6, whiteSpace:"nowrap",overflow:"hidden" }}>
+                  <span style={{ fontSize:16,width:22,textAlign:"center",flexShrink:0 }}>{m.icon}</span>
+                  {sidebarOpen && (
+                    <div style={{ display:"flex",alignItems:"center",gap:6,flex:1,minWidth:0 }}>
+                      <span style={{ overflow:"hidden",textOverflow:"ellipsis" }}>{m.label}</span>
+                      {m.premium && user.plan==="free" && <span style={{ fontSize:8,background:"rgba(245,166,35,0.2)",color:DS.accent,padding:"1px 4px",borderRadius:2,flexShrink:0 }}>PRO</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+          <div style={{ padding:10,borderTop:`1px solid ${DS.border}` }}>
+            {sidebarOpen && (
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <span style={{ background:`linear-gradient(135deg,${planInfo.color},${DS.accentDim})`,color:"#000",fontSize:9,fontWeight:700,padding:"2px 8px",borderRadius:3,letterSpacing:2 }}>{planInfo.label}</span>
+                <span style={{ fontSize:9,color:DS.muted }}>ARG 2025</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* MAIN */}
+        <div style={{ flex:1,display:"flex",flexDirection:"column",overflow:"hidden" }}>
+          {/* TOPBAR */}
+          <div style={{ height:50,background:DS.panel,borderBottom:`1px solid ${DS.border}`,display:"flex",alignItems:"center",padding:"0 16px",gap:12,flexShrink:0 }}>
+            <button onClick={()=>setSidebarOpen(s=>!s)} style={{ padding:"5px 9px",background:"transparent",border:`1px solid ${DS.border}`,color:DS.muted,borderRadius:5,cursor:"pointer",fontFamily:DS.font,fontSize:16 }}>☰</button>
+            <div style={{ width:8,height:8,borderRadius:"50%",background:DS.green,boxShadow:`0 0 6px ${DS.green}`,animation:"pulse 2s infinite" }} />
+            <span style={{ fontSize:14,fontWeight:700,letterSpacing:0.5 }}>{modLabel.toUpperCase()}</span>
+            <div style={{ marginLeft:"auto",display:"flex",gap:10,alignItems:"center" }}>
+              <Tag color={planInfo.color}>{planInfo.label}</Tag>
+              <span style={{ fontSize:12,color:DS.muted }}>{user.nombre}</span>
+              <div style={{ width:30,height:30,borderRadius:"50%",background:user.plan==="premium"?DS.accent:DS.muted,
+                display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,color:"#000",fontSize:12,cursor:"pointer" }}
+                onClick={()=>setActiveModule("perfil")}>{user.nombre.charAt(0)}</div>
+              <button onClick={handleLogout} style={{ padding:"5px 10px",background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",color:DS.red,borderRadius:5,cursor:"pointer",fontFamily:DS.font,fontSize:11,fontWeight:600 }}>↩ Salir</button>
+            </div>
+          </div>
+
+          {/* CONTENIDO */}
+          <div style={{ flex:1,overflowY:"auto",overflowX:"hidden",padding:18 }}>
+            {showUpgrade
+              ? <UpgradeWall moduleName={modLabel} onBack={()=>setActiveModule("dashboard")} />
+              : <UserAppContent activeModule={activeModule} user={user} notify={notify} setModule={setActiveModule} />
+            }
+          </div>
+        </div>
+      </div>
+      <Notifs items={notifs} />
+    </>
+  );
+}
+
+// ── Contenido de la app para usuarios (wrapper simplificado) ─
+function UserAppContent({ activeModule, user, notify, setModule }) {
+  // Dashboard adaptado al usuario
+  if (activeModule==="dashboard") return <UserDashboard user={user} notify={notify} setModule={setModule} />;
+  if (activeModule==="calculos") return <CalcBasic notify={notify} />;
+  if (activeModule==="perfil")   return <UserPerfil user={user} notify={notify} />;
+  // Módulos premium (solo se llega aquí si canAccess=true)
+  return (
+    <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"50vh",gap:16,color:DS.muted }}>
+      <div style={{ fontSize:40 }}>🚧</div>
+      <div style={{ fontSize:16,fontWeight:700,color:DS.text }}>Módulo {activeModule} — Disponible en app completa</div>
+      <div style={{ fontSize:13,color:DS.muted,maxWidth:400,textAlign:"center" }}>Este módulo funciona integrado en el archivo <strong>electrocad-completo.jsx</strong>. El sistema de auth se combina con ese archivo en producción.</div>
+    </div>
+  );
+}
+
+function UserDashboard({ user, notify, setModule }) {
+  const plan = PLAN_FEATURES[user.plan];
+  return (
+    <div>
+      {/* Bienvenida */}
+      <div style={{ background:`linear-gradient(135deg,${DS.panel},${DS.surface})`,border:`1px solid ${DS.border}`,borderRadius:10,padding:20,marginBottom:18,display:"flex",alignItems:"center",gap:18 }}>
+        <div style={{ width:54,height:54,borderRadius:"50%",background:user.plan==="premium"?DS.accent:DS.muted,display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,color:"#000",flexShrink:0 }}>{user.nombre.charAt(0)}</div>
+        <div>
+          <div style={{ fontSize:20,fontWeight:700,marginBottom:4 }}>Bienvenido, {user.nombre.split(" ")[0]}</div>
+          <div style={{ fontSize:12,color:DS.muted }}>{user.email} · Matrícula: {user.matricula} · {user.provincia}</div>
+          <div style={{ marginTop:6 }}><Tag color={plan.color}>{plan.label}</Tag>{user.vencimiento!=="—"&&<span style={{ fontSize:11,color:DS.muted,marginLeft:10 }}>Vence: {user.vencimiento}</span>}</div>
+        </div>
+      </div>
+
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:14,marginBottom:18 }}>
+        <StatCard label="PROYECTOS" value={user.proyectos} icon="⊞" />
+        <StatCard label="CÁLCULOS" value={user.calculos} color={DS.blue} icon="∑" />
+        <StatCard label="PRESUPUESTOS" value={user.presupuestos} color={DS.green} icon="₿" />
+      </div>
+
+      {user.plan==="free" && (
+        <div style={{ background:"rgba(245,166,35,0.08)",border:`1px solid ${DS.accent}44`,borderRadius:8,padding:16,marginBottom:18,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontWeight:700,marginBottom:4 }}>⚡ Activá tu plan Premium</div>
+            <div style={{ fontSize:12,color:DS.muted }}>Desbloqueá planos, análisis IA, simulador DIN, solar, CCTV y presupuestos — ARS 4.900/año</div>
+          </div>
+          <button onClick={()=>setModule("perfil")} style={{ padding:"9px 18px",background:DS.accent,color:"#000",border:"none",borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700,whiteSpace:"nowrap",flexShrink:0,marginLeft:16 }}>Activar Premium</button>
+        </div>
+      )}
+
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:14 }}>
+        <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:16 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>MÓDULOS DISPONIBLES</div>
+          {["dashboard","plano","ia","tablero","calculos","solar","corrientes","presupuesto"].map(id=>{
+            const ok = plan.modules.includes(id);
+            const m = {dashboard:"Dashboard",plano:"Plano Virtual",ia:"Análisis IA",tablero:"Simulador DIN",calculos:"Cálculos",solar:"Solar FV",corrientes:"Corrientes Débiles",presupuesto:"Presupuesto"}[id];
+            return (
+              <div key={id} onClick={()=>ok&&setModule(id)} style={{ display:"flex",alignItems:"center",justifyContent:"space-between",
+                padding:"7px 0",borderBottom:`1px solid ${DS.border}22`,cursor:ok?"pointer":"default" }}>
+                <span style={{ fontSize:13,color:ok?DS.text:DS.muted }}>{m}</span>
+                {ok?<Tag color={DS.green}>DISPONIBLE</Tag>:<Tag color={DS.muted}>PREMIUM</Tag>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:16 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>INFORMACIÓN DE CUENTA</div>
+          {[
+            {l:"Email",v:user.email},
+            {l:"Matrícula",v:user.matricula},
+            {l:"CUIT",v:user.cuit},
+            {l:"Provincia",v:user.provincia},
+            {l:"Fecha de alta",v:user.fechaAlta},
+            {l:"Último acceso",v:user.ultimoAcceso},
+            {l:"Clave de licencia",v:user.licenseKey},
+          ].map(i=>(
+            <div key={i.l} style={{ display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:`1px solid ${DS.border}22`,fontSize:12 }}>
+              <span style={{ color:DS.muted }}>{i.l}</span>
+              <span style={{ fontFamily:DS.mono,color:i.l==="Clave de licencia"?DS.accent:DS.text,fontSize:11 }}>{i.v}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CalcBasic({ notify }) {
+  const [c, setC] = useState({ corriente:20, distancia:50, seccion:"2.5", tension:220 });
+  const [res, setRes] = useState(null);
+  const calcular = () => {
+    const cv = (2*0.0172*parseFloat(c.distancia)*parseFloat(c.corriente))/parseFloat(c.seccion);
+    const pct = (cv/parseFloat(c.tension))*100;
+    setRes({ cv:cv.toFixed(2), pct:pct.toFixed(2), ok:pct<=3 });
+    notify(pct<=3?"✓ Caída dentro del límite AEA":"⚠ Caída supera 3%", pct<=3?"ok":"warn");
+  };
+  return (
+    <div>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18,marginBottom:14 }}>
+        <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:14 }}>CALCULADORA DE CAÍDA DE TENSIÓN</div>
+        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12 }}>
+          <div><label>CORRIENTE (A)</label><input type="number" value={c.corriente} onChange={e=>setC(p=>({...p,corriente:e.target.value}))} /></div>
+          <div><label>DISTANCIA (m)</label><input type="number" value={c.distancia} onChange={e=>setC(p=>({...p,distancia:e.target.value}))} /></div>
+          <div><label>SECCIÓN (mm²)</label>
+            <select value={c.seccion} onChange={e=>setC(p=>({...p,seccion:e.target.value}))}>
+              {CABLES.map(x=><option key={x.seccion} value={parseFloat(x.seccion)}>{x.seccion}</option>)}
+            </select>
+          </div>
+          <div><label>TENSIÓN</label>
+            <select value={c.tension} onChange={e=>setC(p=>({...p,tension:e.target.value}))}>
+              <option value={220}>220 V</option><option value={380}>380 V</option>
+            </select>
+          </div>
+        </div>
+        <button onClick={calcular} style={{ width:"100%",padding:11,borderRadius:6,border:"none",
+          background:`linear-gradient(135deg,${DS.accent},${DS.accentDim})`,color:"#000",
+          fontFamily:DS.font,fontSize:14,fontWeight:700,cursor:"pointer" }}>∑ Calcular</button>
+        {res && (
+          <div style={{ marginTop:14,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12 }}>
+            <div style={{ background:DS.surface,borderRadius:6,padding:"12px 14px" }}>
+              <div style={{ fontSize:10,color:DS.muted }}>CAÍDA DE TENSIÓN</div>
+              <div style={{ fontFamily:DS.mono,fontSize:26,fontWeight:700,color:DS.accent }}>{res.cv} V</div>
+            </div>
+            <div style={{ background:DS.surface,borderRadius:6,padding:"12px 14px" }}>
+              <div style={{ fontSize:10,color:DS.muted }}>PORCENTAJE</div>
+              <div style={{ fontFamily:DS.mono,fontSize:26,fontWeight:700,color:res.ok?DS.green:DS.red }}>{res.pct}%</div>
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18 }}>
+        <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>TABLA AEA 90364</div>
+        <table style={{ width:"100%",borderCollapse:"collapse",fontSize:12 }}>
+          <thead><tr>{["SECCIÓN","AMP. MÁX.","USO TÍPICO"].map(h=><th key={h} style={{ padding:"5px 8px",textAlign:"left",fontSize:9,letterSpacing:1.5,color:DS.muted,borderBottom:`1px solid ${DS.border}`,fontWeight:600 }}>{h}</th>)}</tr></thead>
+          <tbody>{CABLES.map((c,i)=>(
+            <tr key={i} style={{ borderBottom:`1px solid ${DS.border}22` }}>
+              <td style={{ padding:"7px 8px",fontFamily:DS.mono,color:DS.accent,fontWeight:700 }}>{c.seccion}</td>
+              <td style={{ padding:"7px 8px",fontFamily:DS.mono }}>{c.amp_max} A</td>
+              <td style={{ padding:"7px 8px",fontSize:11,color:DS.muted }}>{c.uso}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+
+function UserPerfil({ user, notify }) {
+  const [clave, setClave] = useState("");
+  const activarPremium = () => {
+    if (!clave.match(/^ELEC-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/)) {
+      notify("Formato inválido. Ej: ELEC-XXXX-XXXX-XXXX","err"); return;
+    }
+    const db = loadDB();
+    const u = db.users.find(x=>x.id===user.id);
+    if (u && u.licenseKey===clave) {
+      u.plan="premium"; u.estado="activo";
+      u.vencimiento=new Date(Date.now()+365*24*3600*1000).toISOString().split("T")[0];
+      saveDB(db);
+      notify("✓ Clave válida — Premium activo. Recargá la página para ver los cambios.","ok");
+    } else {
+      notify("Clave incorrecta o no asignada a tu cuenta.","err");
+    }
+  };
+  return (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }}>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18 }}>
+        <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:14 }}>MIS DATOS</div>
+        {[{l:"Nombre",v:user.nombre},{l:"Email",v:user.email},{l:"Matrícula",v:user.matricula},
+          {l:"CUIT",v:user.cuit},{l:"Provincia",v:user.provincia},{l:"Fecha de alta",v:user.fechaAlta},
+          {l:"Plan",v:user.plan.toUpperCase()},{l:"Vencimiento",v:user.vencimiento}].map(i=>(
+          <div key={i.l} style={{ display:"flex",justifyContent:"space-between",padding:"8px 0",
+            borderBottom:`1px solid ${DS.border}22`,fontSize:13 }}>
+            <span style={{ color:DS.muted }}>{i.l}</span>
+            <span style={{ color:i.l==="Plan"?DS.accent:DS.text,fontWeight:i.l==="Plan"?700:400,
+              fontFamily:i.l==="Clave"?DS.mono:undefined }}>{i.v}</span>
+          </div>
+        ))}
+      </div>
+      <div>
+        {user.plan==="free" && (
+          <div style={{ background:DS.panel,border:`1px solid ${DS.accent}44`,borderRadius:8,padding:18,marginBottom:14 }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>ACTIVAR PLAN PREMIUM</div>
+            <div style={{ fontSize:12,color:DS.muted,marginBottom:12,lineHeight:1.6 }}>
+              Si ya realizaste el pago, el administrador te envió una clave única. Ingresala acá para activar tu cuenta Premium.
+            </div>
+            <label style={{ fontSize:10,color:DS.muted,letterSpacing:1,fontWeight:600,display:"block",marginBottom:5 }}>CLAVE DE LICENCIA</label>
+            <input value={clave} onChange={e=>setClave(e.target.value.toUpperCase())} placeholder="ELEC-XXXX-XXXX-XXXX" style={{ marginBottom:10 }} />
+            <button onClick={activarPremium} style={{ width:"100%",padding:10,
+              background:`linear-gradient(135deg,${DS.accent},${DS.accentDim})`,color:"#000",border:"none",
+              borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:700 }}>⚡ Activar Premium</button>
+            <div style={{ marginTop:12,padding:"10px 12px",background:DS.surface,borderRadius:6,
+              fontSize:11,color:DS.muted,lineHeight:1.5 }}>
+              Para adquirir tu licencia Premium contactá al administrador: <strong style={{ color:DS.text }}>admin@electrocad.com</strong>
+            </div>
+          </div>
+        )}
+        {user.plan==="premium" && (
+          <div style={{ background:"rgba(245,166,35,0.06)",border:`1px solid ${DS.accent}44`,borderRadius:8,padding:18 }}>
+            <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:8 }}>LICENCIA PREMIUM ACTIVA</div>
+            <div style={{ fontFamily:DS.mono,fontSize:13,color:DS.accent,marginBottom:10,wordBreak:"break-all" }}>{user.licenseKey}</div>
+            <span style={{ background:`${DS.green}22`,color:DS.green,border:`1px solid ${DS.green}44`,padding:"2px 8px",borderRadius:3,fontSize:10,fontWeight:700 }}>✓ ACTIVA</span>
+            <div style={{ marginTop:10,fontSize:11,color:DS.muted }}>Vence: {user.vencimiento}</div>
+          </div>
+        )}
+        <div style={{ background:DS.panel,border:`1px solid ${DS.border}`,borderRadius:8,padding:18,marginTop:14 }}>
+          <div style={{ fontSize:10,fontWeight:700,letterSpacing:2,color:DS.muted,marginBottom:12 }}>MÓDULOS DISPONIBLES</div>
+          {["dashboard","plano","ia","tablero","calculos","solar","corrientes","presupuesto"].map(id=>{
+            const ok = PLAN_FEATURES[user.plan]?.modules.includes(id);
+            const labels = {dashboard:"Dashboard",plano:"Plano Virtual",ia:"Análisis IA",tablero:"Simulador DIN",calculos:"Cálculos",solar:"Solar FV",corrientes:"Corrientes Débiles",presupuesto:"Presupuesto"};
+            return (
+              <div key={id} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",
+                padding:"6px 0",borderBottom:`1px solid ${DS.border}22`,fontSize:12 }}>
+                <span style={{ color:ok?DS.text:DS.muted }}>{labels[id]}</span>
+                <span style={{ background:ok?`${DS.green}22`:`${DS.muted}22`,color:ok?DS.green:DS.muted,
+                  border:`1px solid ${ok?DS.green:DS.muted}44`,padding:"1px 6px",borderRadius:3,fontSize:9,fontWeight:700 }}>
+                  {ok?"✓":"PRO"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// FULL APP — Módulos completos conectados al sistema Auth
+// ════════════════════════════════════════════════════════════
+
+function FullAppModules({ activeModule, user, notify, setModule }) {
+  if (activeModule === "dashboard")   return <Dashboard notify={notify} setModule={setModule} user={user} />;
+  if (activeModule === "plano")       return <PlanoVirtual notify={notify} />;
+  if (activeModule === "ia")          return <ModuloIA />;
+  if (activeModule === "tablero")     return <SimuladorTablero notify={notify} />;
+  if (activeModule === "calculos")    return <Calculos notify={notify} />;
+  if (activeModule === "solar")       return <SolarFV notify={notify} />;
+  if (activeModule === "corrientes")  return <CorrientesDebiles notify={notify} />;
+  if (activeModule === "presupuesto") return <Presupuesto notify={notify} />;
+  if (activeModule === "perfil")      return <UserPerfil user={user} notify={notify} />;
+  return null;
+}
+
+// Override Dashboard to show user name dynamically
+function Dashboard({ notify, setModule, user }) {
+  const stats = [
+    { val: String(user?.proyectos ?? 14), label:"PROYECTOS ACTIVOS", delta:"+3 este mes" },
+    { val: String(user?.calculos ?? 87),  label:"CÁLCULOS",          delta:"↑ 12% anual"  },
+    { val: "ARS 2.4M",                    label:"FACTURADO",         delta:"YTD 2025"     },
+    { val: "98%",                         label:"CUMPLIMIENTO AEA",  delta:"Sin observaciones" },
+  ];
+  const proyectos = [
+    { nombre:"Vivienda unifamiliar - Palermo", estado:"En curso",   bocas:42,  fecha:"12/06" },
+    { nombre:"Local comercial - Flores",       estado:"Presupuesto",bocas:28,  fecha:"15/06" },
+    { nombre:"Industria liviana - Quilmes",    estado:"Completado", bocas:115, fecha:"01/06" },
+    { nombre:"Dep. planta baja - San Telmo",   estado:"Revisión",   bocas:18,  fecha:"18/06" },
+    { nombre:"Oficinas 3er piso - Microcentro",estado:"En curso",   bocas:67,  fecha:"20/06" },
+  ];
+  const tag = e => {
+    const m = {"Completado":"tag-green","En curso":"tag-blue","Presupuesto":"tag-yellow","Revisión":"tag-red"};
+    return <span className={`tag ${m[e]||"tag-red"}`}>{e}</span>;
+  };
+  const plan = PLAN_FEATURES[user?.plan||"free"];
+  return (
+    <div>
+      {/* Welcome banner */}
+      <div style={{ background:`linear-gradient(135deg,${DS.panel},${DS.surface})`,border:`1px solid ${DS.border}`,
+        borderRadius:10,padding:18,marginBottom:18,display:"flex",alignItems:"center",gap:16 }}>
+        <div style={{ width:50,height:50,borderRadius:"50%",background:user?.plan==="premium"?DS.accent:DS.muted,
+          display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,fontWeight:700,color:"#000",flexShrink:0 }}>
+          {(user?.nombre||"U").charAt(0)}
+        </div>
+        <div>
+          <div style={{ fontSize:18,fontWeight:700 }}>Bienvenido, {(user?.nombre||"Usuario").split(" ")[0]}</div>
+          <div style={{ fontSize:12,color:DS.muted }}>{user?.email} · Mat. {user?.matricula} · {user?.provincia}</div>
+        </div>
+        <div style={{ marginLeft:"auto",display:"flex",gap:8,alignItems:"center" }}>
+          <span style={{ background:`${plan.color}22`,color:plan.color,border:`1px solid ${plan.color}44`,
+            padding:"3px 10px",borderRadius:3,fontSize:10,fontWeight:700,letterSpacing:1 }}>{plan.label}</span>
+          {user?.plan==="free" && (
+            <button onClick={()=>setModule("perfil")} style={{ padding:"7px 14px",background:DS.accent,color:"#000",
+              border:"none",borderRadius:5,cursor:"pointer",fontFamily:DS.font,fontSize:12,fontWeight:700 }}>⚡ Activar Premium</button>
+          )}
+        </div>
+      </div>
+      {user?.plan==="free" && (
+        <div style={{ background:"rgba(245,166,35,0.08)",border:`1px solid ${DS.accent}44`,borderRadius:8,
+          padding:"12px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+          <span style={{ fontSize:13,color:DS.muted }}>🔒 Tenés acceso al plan Free. Activá Premium para desbloquear todos los módulos.</span>
+        </div>
+      )}
+      <div className="grid-4" style={{ marginBottom:18 }}>
+        {stats.map((s,i) => (
+          <div key={i} className="card">
+            <div className="stat-val">{s.val}</div>
+            <div className="stat-label">{s.label}</div>
+            <div style={{ fontSize:11,color:DS.green,marginTop:6 }}>{s.delta}</div>
+          </div>
+        ))}
+      </div>
+      <div className="grid-2" style={{ marginBottom:18 }}>
+        <div className="card">
+          <div className="card-title">Proyectos Recientes</div>
+          <table className="table">
+            <thead><tr><th>PROYECTO</th><th>ESTADO</th><th>BOCAS</th><th>FECHA</th></tr></thead>
+            <tbody>{proyectos.map((p,i)=>(
+              <tr key={i}>
+                <td style={{ fontWeight:600 }}>{p.nombre}</td>
+                <td>{tag(p.estado)}</td>
+                <td style={{ fontFamily:DS.mono,color:DS.accent }}>{p.bocas}</td>
+                <td style={{ color:DS.muted,fontSize:12 }}>{p.fecha}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div>
+          <div className="card" style={{ marginBottom:12 }}>
+            <div className="card-title">Acceso Rápido</div>
+            <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:8 }}>
+              {[{label:"Nuevo Plano",mod:"plano",icon:"⊞"},{label:"Análisis IA",mod:"ia",icon:"🤖"},
+                {label:"Simulador",mod:"tablero",icon:"⚡"},{label:"Presupuesto",mod:"presupuesto",icon:"₿"}].map(a=>(
+                <button key={a.mod} className="btn btn-ghost" style={{ justifyContent:"flex-start",gap:8 }} onClick={()=>setModule(a.mod)}>
+                  <span style={{ fontSize:15 }}>{a.icon}</span>{a.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <div className="card-title">Alertas del Sistema</div>
+            <div className="alert alert-warn"><span>⚠</span><span>Proyecto "Flores" sin cálculo de caída verificado.</span></div>
+            <div className="alert alert-ok"><span>✓</span><span>Certificado AEA vigente hasta Dic 2025.</span></div>
+            <div className="alert alert-err"><span>✕</span><span>C3 tablero "Quilmes" — térmica sobredimensionada.</span></div>
+          </div>
+        </div>
+      </div>
+      <div className="card">
+        <div className="card-title">Referencia Rápida — Secciones de Cable (AEA 90364)</div>
+        <table className="table">
+          <thead><tr><th>SECCIÓN</th><th>AMP. MÁX.</th><th>USO TÍPICO</th><th>TÉRMICA</th></tr></thead>
+          <tbody>{CABLES.map((c,i)=>(
+            <tr key={i}>
+              <td style={{ fontFamily:DS.mono,color:DS.accent,fontWeight:600 }}>{c.seccion}</td>
+              <td style={{ fontFamily:DS.mono }}>{c.amp_max} A</td>
+              <td style={{ fontSize:12,color:DS.muted }}>{c.uso}</td>
+              <td><span className="tag tag-blue">{c.amp_max} A</span></td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ── UPGRADE WALL ─────────────────────────────────────────────
+function UpgradeWall({ moduleName, onBack }) {
+  return (
+    <div style={{ display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+      minHeight:"60vh",textAlign:"center",padding:40 }}>
+      <div style={{ fontSize:52,marginBottom:16 }}>🔒</div>
+      <div style={{ fontSize:22,fontWeight:700,marginBottom:8 }}>Módulo Premium</div>
+      <div style={{ fontSize:14,color:DS.muted,marginBottom:24,maxWidth:400,lineHeight:1.6 }}>
+        <strong style={{ color:DS.text }}>{moduleName}</strong> está disponible únicamente en el plan Premium.<br/>
+        Contactá al administrador para activar tu suscripción.
+      </div>
+      <div style={{ background:DS.panel,border:`1px solid ${DS.accent}44`,borderRadius:10,padding:"20px 28px",marginBottom:20 }}>
+        <div style={{ fontSize:10,color:DS.muted,letterSpacing:2,marginBottom:10 }}>PLAN PREMIUM INCLUYE</div>
+        {["Planos ilimitados","Análisis IA con foto de ambiente o plano","Simulador de tablero DIN","Solar fotovoltaico","CCTV + Alarmas","Presupuesto PDF + WhatsApp"].map(f=>(
+          <div key={f} style={{ fontSize:13,color:DS.green,padding:"3px 0" }}>✓ {f}</div>
+        ))}
+        <div style={{ marginTop:14,fontFamily:DS.mono,fontSize:24,fontWeight:700,color:DS.accent }}>ARS 4.900 / año</div>
+      </div>
+      <button onClick={onBack} style={{ padding:"9px 22px",background:DS.surface,border:`1px solid ${DS.border}`,
+        color:DS.muted,borderRadius:6,cursor:"pointer",fontFamily:DS.font,fontSize:13,fontWeight:600 }}>
+        ← Volver al Dashboard
+      </button>
+    </div>
+  );
+}
+
+// ── FULL APP SHELL (usuario autenticado) ─────────────────────
+function FullAppShell({ user, onLogout, notify }) {
+  const [activeModule, setActiveModule] = useState("dashboard");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const canAccess = (modId) => {
+    if (user.role === "admin") return true;
+    return PLAN_FEATURES[user.plan]?.modules.includes(modId);
+  };
+
+  const modules = [
+    { id:"dashboard",   label:"Dashboard",         icon:"⬡" },
+    { id:"plano",       label:"Plano Virtual",      icon:"⊞",  premium:true },
+    { id:"ia",          label:"Análisis IA",        icon:"🤖", premium:true },
+    { id:"tablero",     label:"Simulador DIN",      icon:"⚡", premium:true },
+    { id:"calculos",    label:"Cálculos",           icon:"∑" },
+    { id:"solar",       label:"Solar FV",           icon:"☀",  premium:true },
+    { id:"corrientes",  label:"Corrientes Débiles", icon:"◉",  premium:true },
+    { id:"presupuesto", label:"Presupuesto",        icon:"₿",  premium:true },
+    { id:"perfil",      label:"Mi Perfil",          icon:"◈" },
+  ];
+
+  const planInfo = PLAN_FEATURES[user.plan] || PLAN_FEATURES.free;
+  const modLabel = modules.find(m=>m.id===activeModule)?.label || "";
+  const showUpgrade = !canAccess(activeModule);
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{background:${DS.bg};color:${DS.text};font-family:${DS.font};overflow:hidden;}
+        ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:${DS.surface}}::-webkit-scrollbar-thumb{background:${DS.border};border-radius:2px}
+        @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+        @keyframes scan{0%{width:0%;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+        @keyframes tripAnim{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+        .app{display:flex;height:100vh;width:100vw;overflow:hidden;}
+        .sidebar{width:${sidebarOpen?"218px":"58px"};background:${DS.panel};border-right:1px solid ${DS.border};display:flex;flex-direction:column;transition:width 0.25s;flex-shrink:0;}
+        .sidebar-logo{padding:13px 14px;border-bottom:1px solid ${DS.border};display:flex;align-items:center;gap:10px;overflow:hidden;}
+        .logo-mark{width:30px;height:30px;border-radius:6px;background:${DS.accent};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;color:#000;flex-shrink:0;}
+        .logo-text{font-size:13px;font-weight:700;letter-spacing:0.5px;white-space:nowrap;}
+        .logo-sub{font-size:8px;color:${DS.muted};font-family:${DS.mono};letter-spacing:2px;}
+        .nav-item{display:flex;align-items:center;gap:10px;padding:10px 13px;cursor:pointer;border-left:3px solid transparent;transition:all 0.15s;white-space:nowrap;overflow:hidden;}
+        .nav-item:hover{background:rgba(245,166,35,0.06);border-left-color:${DS.accentDim};}
+        .nav-item.active{background:rgba(245,166,35,0.12);border-left-color:${DS.accent};color:${DS.accent};}
+        .nav-item.locked{opacity:0.45;}
+        .nav-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
+        .nav-label{font-size:12px;font-weight:600;letter-spacing:0.5px;flex:1;overflow:hidden;text-overflow:ellipsis;}
+        .nav-pro{font-size:8px;background:rgba(245,166,35,0.2);color:${DS.accent};padding:1px 4px;border-radius:2px;flex-shrink:0;}
+        .sidebar-footer{margin-top:auto;padding:10px;border-top:1px solid ${DS.border};}
+        .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+        .topbar{height:50px;background:${DS.panel};border-bottom:1px solid ${DS.border};display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;}
+        .topbar-title{font-size:14px;font-weight:700;letter-spacing:0.5px;}
+        .topbar-badge{background:${DS.surface};border:1px solid ${DS.border};padding:3px 9px;border-radius:3px;font-size:9px;font-family:${DS.mono};color:${DS.muted};}
+        .status-dot{width:8px;height:8px;border-radius:50%;background:${DS.green};box-shadow:0 0 6px ${DS.green};animation:pulse 2s infinite;flex-shrink:0;}
+        .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border-radius:5px;font-family:${DS.font};font-size:12px;font-weight:600;cursor:pointer;border:none;letter-spacing:0.5px;transition:all 0.15s;}
+        .btn-primary{background:${DS.accent};color:#000;}.btn-primary:hover{background:#FFB740;}
+        .btn-ghost{background:transparent;color:${DS.muted};border:1px solid ${DS.border};}.btn-ghost:hover{border-color:${DS.accent};color:${DS.accent};}
+        .btn-danger{background:rgba(239,68,68,0.15);color:${DS.red};border:1px solid rgba(239,68,68,0.3);}
+        .btn-success{background:rgba(34,197,94,0.15);color:${DS.green};border:1px solid rgba(34,197,94,0.3);}
+        .content{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px;}
+        .card{background:${DS.panel};border:1px solid ${DS.border};border-radius:8px;padding:18px;}
+        .card-title{font-size:10px;font-weight:700;letter-spacing:2px;color:${DS.muted};text-transform:uppercase;margin-bottom:12px;}
+        .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+        .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+        .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+        .stat-val{font-size:28px;font-weight:700;font-family:${DS.mono};color:${DS.accent};}
+        .stat-label{font-size:10px;color:${DS.muted};letter-spacing:1px;margin-top:4px;}
+        .table{width:100%;border-collapse:collapse;font-size:13px;}
+        .table th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:1.5px;color:${DS.muted};border-bottom:1px solid ${DS.border};font-weight:600;}
+        .table td{padding:9px 10px;border-bottom:1px solid rgba(30,38,51,0.4);}
+        .table tr:hover td{background:rgba(245,166,35,0.03);}
+        .tag{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:0.5px;}
+        .tag-green{background:rgba(34,197,94,0.15);color:${DS.green};}
+        .tag-yellow{background:rgba(234,179,8,0.15);color:${DS.yellow};}
+        .tag-red{background:rgba(239,68,68,0.15);color:${DS.red};}
+        .tag-blue{background:rgba(43,143,232,0.15);color:${DS.blue};}
+        input,select,textarea{background:${DS.surface};border:1px solid ${DS.border};color:${DS.text};padding:7px 11px;border-radius:5px;font-family:${DS.font};font-size:13px;outline:none;width:100%;}
+        input:focus,select:focus{border-color:${DS.accent};}
+        label{font-size:10px;color:${DS.muted};letter-spacing:1px;font-weight:600;display:block;margin-bottom:4px;}
+        .form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px;}
+        .alert{padding:10px 14px;border-radius:6px;font-size:13px;display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;}
+        .alert-warn{background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);color:${DS.yellow};}
+        .alert-err{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:${DS.red};}
+        .alert-ok{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:${DS.green};}
+        .canvas-wrap{position:relative;background:${DS.surface};border:1px solid ${DS.border};border-radius:8px;overflow:hidden;cursor:crosshair;}
+        .canvas-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(30,38,51,0.6) 1px,transparent 1px),linear-gradient(90deg,rgba(30,38,51,0.6) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+        .element-placed{position:absolute;display:flex;flex-direction:column;align-items:center;cursor:grab;user-select:none;}
+        .element-icon{display:flex;align-items:center;justify-content:center;border-radius:6px;border:2px solid;font-size:17px;transition:transform 0.1s;}
+        .element-icon:hover{transform:scale(1.1);}
+        .element-label{font-size:8px;color:${DS.muted};margin-top:2px;white-space:nowrap;font-family:${DS.mono};}
+        .toolbar-el{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 6px;border-radius:6px;cursor:pointer;border:1px solid transparent;transition:all 0.15s;}
+        .toolbar-el:hover{background:rgba(245,166,35,0.08);border-color:${DS.border};}
+        .toolbar-el.selected{background:rgba(245,166,35,0.15);border-color:${DS.accent};}
+        .toolbar-el-icon{font-size:20px;}.toolbar-el-label{font-size:8px;color:${DS.muted};text-align:center;}
+        .din-rail{background:linear-gradient(180deg,#1a1a2e,#16213e);border:2px solid #2a2a4a;border-radius:8px;padding:14px;min-height:180px;}
+        .din-track{height:7px;background:linear-gradient(180deg,#888,#555,#888);border-radius:2px;margin:7px 0;}
+        .breakers-row{display:flex;flex-wrap:wrap;gap:4px;padding:7px 0;}
+        .breaker{width:42px;min-height:78px;border-radius:4px;border:2px solid;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:5px 3px;cursor:pointer;transition:all 0.15s;position:relative;}
+        .breaker.on{background:linear-gradient(180deg,#1a3a2a,#0d2a1a);border-color:#22C55E;}
+        .breaker.off{background:linear-gradient(180deg,#3a1a1a,#2a0d0d);border-color:#EF4444;}
+        .breaker.trip{background:linear-gradient(180deg,#3a2a0a,#2a1a00);border-color:#F5A623;animation:tripAnim 0.5s ease 3;}
+        .breaker-amp{font-size:10px;font-weight:700;font-family:${DS.mono};color:${DS.text};}
+        .breaker-toggle{width:14px;height:26px;border-radius:3px;border:1px solid rgba(255,255,255,0.2);}
+        .breaker.on .breaker-toggle{background:${DS.green};}.breaker.off .breaker-toggle{background:${DS.red};}.breaker.trip .breaker-toggle{background:${DS.accent};}
+        .breaker-label{font-size:7px;color:${DS.muted};text-align:center;line-height:1.2;}
+        .progress-bar{height:6px;background:${DS.border};border-radius:3px;overflow:hidden;}
+        .progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+        .tabs{display:flex;gap:0;border-bottom:1px solid ${DS.border};margin-bottom:18px;}
+        .tab{padding:9px 16px;font-size:12px;font-weight:600;letter-spacing:0.5px;cursor:pointer;border-bottom:2px solid transparent;color:${DS.muted};transition:all 0.15s;}
+        .tab.active{color:${DS.accent};border-bottom-color:${DS.accent};}.tab:hover{color:${DS.text};}
+        .section-sep{height:1px;background:${DS.border};margin:16px 0;}
+        .budget-item{display:flex;align-items:center;gap:10px;padding:9px;border-radius:6px;border:1px solid ${DS.border};background:${DS.surface};margin-bottom:7px;}
+        .premium-badge{background:linear-gradient(135deg,#F5A623,#C47D0E);color:#000;font-size:9px;font-weight:700;padding:3px 8px;border-radius:3px;letter-spacing:2px;}
+      `}</style>
+
+      <div className="app">
+        <div className="sidebar">
+          <div className="sidebar-logo">
+            <div className="logo-mark">⚡</div>
+            {sidebarOpen && <div><div className="logo-text">ElectroCAD</div><div className="logo-sub">PRO v2.0</div></div>}
+          </div>
+          <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
+            {modules.map(m => {
+              const accessible = canAccess(m.id);
+              return (
+                <div key={m.id}
+                  className={`nav-item ${activeModule===m.id?"active":""} ${!accessible?"locked":""}`}
+                  onClick={()=>setActiveModule(m.id)}>
+                  <span className="nav-icon">{m.icon}</span>
+                  {sidebarOpen && (
+                    <>
+                      <span className="nav-label">{m.label}</span>
+                      {m.premium && !accessible && <span className="nav-pro">PRO</span>}
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
+          <div className="sidebar-footer">
+            {sidebarOpen && (
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <span className="premium-badge">{planInfo.label}</span>
+                <span style={{ fontSize:9,color:DS.muted }}>ARG 2025</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="main">
+          <div className="topbar">
+            <button className="btn btn-ghost" onClick={()=>setSidebarOpen(s=>!s)} style={{ padding:"5px 9px",fontSize:16 }}>☰</button>
+            <div className="status-dot" />
+            <span className="topbar-title">{modLabel.toUpperCase()}</span>
+            <span className="topbar-badge">{activeModule==="ia"?"CLAUDE AI VISION · AEA 90364":"REGLAMENTACIÓN AEA 90364"}</span>
+            <div style={{ marginLeft:"auto",display:"flex",gap:10,alignItems:"center" }}>
+              <span style={{ fontSize:11,color:DS.muted }}>{user.nombre}</span>
+              <div onClick={()=>setActiveModule("perfil")} style={{ width:30,height:30,borderRadius:"50%",
+                background:user.plan==="premium"?DS.accent:DS.muted,display:"flex",alignItems:"center",
+                justifyContent:"center",fontWeight:700,color:"#000",fontSize:13,cursor:"pointer" }}>
+                {user.nombre.charAt(0)}
+              </div>
+              <button onClick={onLogout} style={{ padding:"5px 10px",background:"rgba(239,68,68,0.1)",
+                border:"1px solid rgba(239,68,68,0.3)",color:DS.red,borderRadius:5,cursor:"pointer",
+                fontFamily:DS.font,fontSize:11,fontWeight:600 }}>↩ Salir</button>
+            </div>
+          </div>
+          <div className="content">
+            {showUpgrade
+              ? <UpgradeWall moduleName={modLabel} onBack={()=>setActiveModule("dashboard")} />
+              : <FullAppModules activeModule={activeModule} user={user} notify={notify} setModule={setActiveModule} />
+            }
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// ENTRY POINT — EXPORT DEFAULT
+// ════════════════════════════════════════════════════════════
+export default function ElectroCADFinal() {
+  const [user, setUser] = useState(null);
+  const [notifs, setNotifs] = useState([]);
+
+  const notify = useCallback((msg, type="info") => {
+    const id = Date.now();
+    setNotifs(n=>[...n,{id,msg,type}]);
+    setTimeout(()=>setNotifs(n=>n.filter(x=>x.id!==id)), 3500);
+  }, []);
+
+  const handleLogin = useCallback((u) => setUser(u), []);
+
+  const handleLogout = () => {
+    setUser(null);
+    notify("Sesión cerrada correctamente","info");
+  };
+
+  return (
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{background:${DS.bg};color:${DS.text};font-family:${DS.font};}
+        @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes modalIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}
+        input:focus,select:focus{border-color:${DS.accent}!important;}
+      `}</style>
+
+      {!user && <AuthScreen onLogin={handleLogin} notify={notify} />}
+      {user && user.role==="admin" && <AdminPanel adminUser={user} onLogout={handleLogout} notify={notify} />}
+      {user && user.role!=="admin" && <FullAppShell user={user} onLogout={handleLogout} notify={notify} />}
+
+      {/* NOTIFICACIONES GLOBALES */}
+      <div style={{ position:"fixed",bottom:18,right:18,display:"flex",flexDirection:"column",gap:7,zIndex:9999 }}>
+        {notifs.map(n=>(
+          <div key={n.id} style={{ padding:"10px 14px",borderRadius:6,fontSize:13,fontWeight:600,
+            background:DS.panel,border:`1px solid ${DS.border}`,boxShadow:"0 4px 20px rgba(0,0,0,0.4)",
+            maxWidth:300,animation:"slideIn 0.25s ease",
+            borderLeft:`3px solid ${n.type==="ok"?DS.green:n.type==="warn"?DS.yellow:n.type==="err"?DS.red:DS.blue}` }}>
+            {n.msg}
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+
+// Mount app
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(ElectroCADFinal));
+</script>
+</body>
+</html>
