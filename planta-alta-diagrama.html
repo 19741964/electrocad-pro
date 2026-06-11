@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ElectroCAD PRO — Diagrama de Instalación Eléctrica</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root {
+  --bg:#0A0C0F; --surface:#111418; --panel:#161B22; --border:#1E2633;
+  --accent:#F5A623; --blue:#2B8FE8; --green:#22C55E; --red:#EF4444;
+  --yellow:#EAB308; --purple:#A855F7; --cyan:#06B6D4; --orange:#F97316;
+  --text:#E2E8F0; --muted:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;padding:0}
+
+/* HEADER */
+.hdr{background:var(--panel);border-bottom:1px solid var(--border);padding:14px 24px;
+  display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:50;flex-wrap:wrap}
+.logo{width:38px;height:38px;background:var(--accent);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:900;color:#000;flex-shrink:0}
+.hdr-info{flex:1}
+.hdr-title{font-size:16px;font-weight:700;letter-spacing:0.5px}
+.hdr-sub{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px}
+.bdg{background:var(--surface);border:1px solid var(--border);padding:3px 10px;
+  border-radius:3px;font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+
+/* TABS */
+.pg-tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);overflow-x:auto}
+.pg-tab{padding:12px 22px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;
+  border-bottom:3px solid transparent;color:var(--muted);transition:all .2s;letter-spacing:.5px}
+.pg-tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+.pg-tab:hover{color:var(--text)}
+
+/* PAGES */
+.page{display:none;padding:24px;max-width:1200px;margin:0 auto}
+.page.on{display:block}
+
+/* SECTION TITLE */
+.stitle{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:10px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* CARD */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+.ctitle{font-size:10px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:14px}
+
+/* TAGS */
+.tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700}
+.tg{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.tb{background:rgba(43,143,232,.15);color:var(--blue);border:1px solid rgba(43,143,232,.3)}
+.ta{background:rgba(245,166,35,.15);color:var(--accent);border:1px solid rgba(245,166,35,.3)}
+.tr{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3)}
+.tp{background:rgba(168,85,247,.15);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+
+/* ═══════════════════════════════════
+   TABLERO SVG STYLES
+   ═══════════════════════════════════ */
+.tablero-wrap{background:#0d1117;border:2px solid #2a2a4a;border-radius:12px;
+  padding:20px;overflow-x:auto}
+.tablero-title-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.t-label{font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:2px}
+.t-val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--accent)}
+
+/* RIEL */
+.riel-container{background:linear-gradient(180deg,#141428,#0d0d1e);border:1px solid #2a2a4a;
+  border-radius:8px;padding:14px 16px;margin-bottom:14px}
+.riel-label{font-size:8px;color:#444;letter-spacing:2px;font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.riel-track{height:8px;background:linear-gradient(180deg,#999,#666,#999);border-radius:2px;margin:6px 0}
+.breakers-row{display:flex;flex-wrap:wrap;gap:5px;padding:8px 0}
+
+/* BREAKER */
+.bk{width:46px;min-height:86px;border-radius:5px;border:2px solid;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:6px 4px;cursor:default;position:relative;transition:all .15s}
+.bk-ilum{border-color:#F5A623;background:linear-gradient(180deg,#2a1e08,#1a1205)}
+.bk-tomas{border-color:#2B8FE8;background:linear-gradient(180deg,#081828,#050f1a)}
+.bk-bano{border-color:#A855F7;background:linear-gradient(180deg,#1a0828,#100518)}
+.bk-dif{border-color:#22C55E;background:linear-gradient(180deg,#082015,#04140d)}
+.bk-main{border-color:#EF4444;background:linear-gradient(180deg,#280808,#1a0404);width:56px;min-height:100px}
+.bk-amp{font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--text)}
+.bk-toggle{width:16px;height:30px;border-radius:3px;border:1px solid rgba(255,255,255,.2)}
+.bk-ilum .bk-toggle{background:var(--accent)}
+.bk-tomas .bk-toggle{background:var(--blue)}
+.bk-bano .bk-toggle{background:var(--purple)}
+.bk-dif .bk-toggle{background:var(--green)}
+.bk-main .bk-toggle{background:var(--red);height:40px;width:20px}
+.bk-label{font-size:7px;color:var(--muted);text-align:center;line-height:1.3}
+.bk-tipo{font-size:6px;text-align:center;font-family:'JetBrains Mono',monospace;margin-top:1px}
+.bk-ilum .bk-tipo{color:var(--accent)}
+.bk-tomas .bk-tipo{color:var(--blue)}
+.bk-bano .bk-tipo{color:var(--purple)}
+.bk-dif .bk-tipo{color:var(--green)}
+.bk-main .bk-tipo{color:var(--red)}
+
+/* LEGEND */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* CIRCUIT TABLE */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:7px 10px;text-align:left;font-size:9px;letter-spacing:1.5px;
+  color:var(--muted);border-bottom:1px solid var(--border);font-weight:600}
+td{padding:9px 10px;border-bottom:1px solid rgba(30,38,51,.5)}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(245,166,35,.03)}
+
+/* CABLE TABLE */
+.cable-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.cable-box{background:var(--surface);border-radius:8px;padding:14px;text-align:center;border:1px solid var(--border)}
+.cable-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--accent)}
+.cable-label{font-size:9px;color:var(--muted);margin-top:4px}
+.cable-line{width:100%;height:4px;border-radius:2px;margin-top:8px}
+
+/* ═══════════════════════════════════
+   PLANO 2D SVG
+   ═══════════════════════════════════ */
+.plano-wrap{background:#f0f4f8;border-radius:10px;padding:0;overflow:auto;border:1px solid var(--border)}
+.plano-header{background:var(--panel);padding:12px 16px;border-radius:10px 10px 0 0;
+  display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.plano-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:14px}
+.pl-item{display:flex;align-items:center;gap:6px;font-size:11px}
+
+/* SUMMARY CARDS */
+.sum-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.sum-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px}
+.sum-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700}
+.sum-label{font-size:10px;color:var(--muted);letter-spacing:1px;margin-top:4px}
+.sum-sub{font-size:11px;color:var(--green);margin-top:6px}
+
+/* ALERT */
+.alert{padding:10px 14px;border-radius:6px;font-size:12px;display:flex;gap:8px;margin-bottom:8px}
+.al-w{background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.3);color:var(--yellow)}
+.al-g{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.3);color:var(--green)}
+.al-b{background:rgba(43,143,232,.08);border:1px solid rgba(43,143,232,.3);color:var(--blue)}
+
+@media(max-width:700px){
+  .sum-grid{grid-template-columns:1fr 1fr}
+  .cable-grid{grid-template-columns:1fr 1fr}
+  .page{padding:14px}
+  .bk{width:38px;min-height:74px}
+  .bk-amp{font-size:9px}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo">⚡</div>
+  <div class="hdr-info">
+    <div class="hdr-title">ElectroCAD PRO — Diagrama de Instalación Eléctrica</div>
+    <div class="hdr-sub">PLANTA ALTA · 4 DORMITORIOS · 2 BAÑOS · AEA 90364</div>
+  </div>
+  <span class="bdg">AEA 90364 · ARG</span>
+</div>
+
+<!-- TABS -->
+<div class="pg-tabs">
+  <div class="pg-tab on" onclick="showPage('tablero')">⚡ Tablero Eléctrico</div>
+  <div class="pg-tab" onclick="showPage('plano')">📐 Plano con Instalación</div>
+  <div class="pg-tab" onclick="showPage('cables')">🔌 Cómputo de Materiales</div>
+  <div class="pg-tab" onclick="showPage('resumen')">📋 Resumen General</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PÁGINA 1 — TABLERO ELÉCTRICO
+     ═══════════════════════════════════════ -->
+<div class="page on" id="pg-tablero">
+
+  <div class="sum-grid">
+    <div class="sum-card"><div class="sum-val" style="color:var(--accent)">13</div><div class="sum-label">CIRCUITOS TOTALES</div><div class="sum-sub">↑ según AEA 90364</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--blue)">18</div><div class="sum-label">MÓDULOS DIN</div><div class="sum-sub">Tablero 24 mód. recom.</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--green)">68 A</div><div class="sum-label">CORRIENTE TOTAL</div><div class="sum-sub">Con factor demanda 0.75</div></div>
+    <div class="sum-card"><div class="sum-val" style="color:var(--purple)">14.9 kW</div><div class="sum-label">POTENCIA TOTAL</div><div class="sum-sub">Instalada planta alta</div></div>
+  </div>
+
+  <!-- TABLERO VISUAL -->
+  <div class="card">
+    <div class="ctitle">TABLERO PLANTA ALTA — RIEL DIN VISUAL</div>
+
+    <div class="tablero-wrap">
+      <div class="tablero-title-bar">
+        <div>
+          <div class="t-label">TABLERO SECUNDARIO — PLANTA ALTA</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:2px">Alimentado desde tablero principal (PB) · Cable 10mm² · 40A</div>
+        </div>
+        <div style="text-align:right">
+          <div class="t-label">DIFERENCIAL GENERAL</div>
+          <div class="t-val">40A / 30mA</div>
+        </div>
+      </div>
+
+      <!-- RIEL 1: GENERAL + PROTECCIONES BAÑOS -->
+      <div class="riel-container">
+        <div class="riel-label">RIEL 1 — PROTECCIONES PRINCIPALES Y BAÑOS</div>
+        <div class="riel-track"></div>
+        <div class="breakers-row">
+          <!-- General -->
+          <div class="bk bk-main" title="Interruptor general 40A">
+            <div class="bk-amp">40A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">GRAL<br>Tablero</div>
+            <div class="bk-tipo">IGA</div>
+          </div>
+          <div style="width:12px"></div>
+          <!-- Diferencial Baño 1 -->
+          <div class="bk bk-dif" title="Diferencial baño 1 - 25A 30mA">
+            <div class="bk-amp">25A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">DIF<br>Baño 1</div>
+            <div class="bk-tipo">30mA</div>
+          </div>
+          <!-- Iluminación Baño 1 -->
+          <div class="bk bk-bano" title="Iluminación baño 1 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C1<br>Ilum B1</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <!-- Toma Baño 1 -->
+          <div class="bk bk-bano" title="Toma baño 1 (GFCI) - 16A">
+            <div class="bk-amp">16A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C2<br>Toma B1</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+          <div style="width:12px"></div>
+          <!-- Diferencial Baño 2 -->
+          <div class="bk bk-dif" title="Diferencial baño 2 - 25A 30mA">
+            <div class="bk-amp">25A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">DIF<br>Baño 2</div>
+            <div class="bk-tipo">30mA</div>
+          </div>
+          <!-- Iluminación Baño 2 -->
+          <div class="bk bk-bano" title="Iluminación baño 2 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C3<br>Ilum B2</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <!-- Toma Baño 2 -->
+          <div class="bk bk-bano" title="Toma baño 2 (GFCI) - 16A">
+            <div class="bk-amp">16A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C4<br>Toma B2</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+          <div style="width:12px"></div>
+          <!-- Pasillo/circulación -->
+          <div class="bk bk-ilum" title="Iluminación circulación y escalera - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C5<br>Circ.</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+        </div>
+        <div class="riel-track"></div>
+      </div>
+
+      <!-- RIEL 2: DORMITORIOS -->
+      <div class="riel-container">
+        <div class="riel-label">RIEL 2 — DORMITORIOS 5, 6, 7 Y 8</div>
+        <div class="riel-track"></div>
+        <div class="breakers-row">
+          <!-- DORM 5 -->
+          <div class="bk bk-ilum" title="Iluminación Dormitorio 5 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C6<br>Ilum D5</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <div class="bk bk-tomas" title="Tomas Dormitorio 5 - 20A">
+            <div class="bk-amp">20A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C7<br>Tom D5</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+          <div style="width:8px"></div>
+          <!-- DORM 6 -->
+          <div class="bk bk-ilum" title="Iluminación Dormitorio 6 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C8<br>Ilum D6</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <div class="bk bk-tomas" title="Tomas Dormitorio 6 - 20A">
+            <div class="bk-amp">20A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C9<br>Tom D6</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+          <div style="width:8px"></div>
+          <!-- DORM 7 -->
+          <div class="bk bk-ilum" title="Iluminación Dormitorio 7 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C10<br>Ilum D7</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <div class="bk bk-tomas" title="Tomas Dormitorio 7 - 20A">
+            <div class="bk-amp">20A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C11<br>Tom D7</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+          <div style="width:8px"></div>
+          <!-- DORM 8 -->
+          <div class="bk bk-ilum" title="Iluminación Dormitorio 8 - 10A">
+            <div class="bk-amp">10A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C12<br>Ilum D8</div>
+            <div class="bk-tipo">1.5mm²</div>
+          </div>
+          <div class="bk bk-tomas" title="Tomas Dormitorio 8 - 20A">
+            <div class="bk-amp">20A</div>
+            <div class="bk-toggle"></div>
+            <div class="bk-label">C13<br>Tom D8</div>
+            <div class="bk-tipo">2.5mm²</div>
+          </div>
+        </div>
+        <div class="riel-track"></div>
+      </div>
+
+      <!-- LEGEND -->
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--red)"></div>IGA — Interruptor General</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Diferencial 30mA (zona húmeda)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--purple)"></div>Circuitos de Baños</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div>Circuitos de Iluminación</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Circuitos de Tomacorrientes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA DE CIRCUITOS -->
+  <div class="card">
+    <div class="ctitle">DETALLE DE CIRCUITOS — AEA 90364</div>
+    <table>
+      <thead>
+        <tr>
+          <th>N°</th><th>CIRCUITO</th><th>ZONA</th><th>TÉRMICA</th><th>SECCIÓN</th><th>CARGA EST.</th><th>TIPO</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--red)">IGA</td><td>Interruptor General</td><td>Tablero</td><td style="font-family:'JetBrains Mono',monospace">40 A</td><td style="font-family:'JetBrains Mono',monospace">10 mm²</td><td style="font-family:'JetBrains Mono',monospace">—</td><td><span class="tag tr">PRINCIPAL</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">DIF1</td><td>Diferencial Baño Superior</td><td>Baño 1</td><td style="font-family:'JetBrains Mono',monospace">25 A / 30mA</td><td style="font-family:'JetBrains Mono',monospace">—</td><td style="font-family:'JetBrains Mono',monospace">—</td><td><span class="tag tg">DIFERENCIAL</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">C1</td><td>Iluminación Baño Superior</td><td>Baño 1</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">200 W</td><td><span class="tag tp">BAÑO</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">C2</td><td>Tomacorriente Baño Superior</td><td>Baño 1</td><td style="font-family:'JetBrains Mono',monospace">16 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">1,500 W</td><td><span class="tag tp">BAÑO</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">DIF2</td><td>Diferencial Baño Inferior</td><td>Baño 2</td><td style="font-family:'JetBrains Mono',monospace">25 A / 30mA</td><td style="font-family:'JetBrains Mono',monospace">—</td><td style="font-family:'JetBrains Mono',monospace">—</td><td><span class="tag tg">DIFERENCIAL</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">C3</td><td>Iluminación Baño Inferior</td><td>Baño 2</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">200 W</td><td><span class="tag tp">BAÑO</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">C4</td><td>Tomacorriente Baño Inferior</td><td>Baño 2</td><td style="font-family:'JetBrains Mono',monospace">16 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">1,500 W</td><td><span class="tag tp">BAÑO</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">C5</td><td>Iluminación Circulación/Escalera</td><td>Pasillo</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">300 W</td><td><span class="tag ta">ILUM.</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">C6</td><td>Iluminación Dormitorio 5</td><td>Dorm 5</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">300 W</td><td><span class="tag ta">ILUM.</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--blue)">C7</td><td>Tomacorrientes Dormitorio 5</td><td>Dorm 5</td><td style="font-family:'JetBrains Mono',monospace">20 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">2,200 W</td><td><span class="tag tb">TOMAS</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">C8</td><td>Iluminación Dormitorio 6</td><td>Dorm 6</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">300 W</td><td><span class="tag ta">ILUM.</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--blue)">C9</td><td>Tomacorrientes Dormitorio 6</td><td>Dorm 6</td><td style="font-family:'JetBrains Mono',monospace">20 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">2,200 W</td><td><span class="tag tb">TOMAS</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">C10</td><td>Iluminación Dormitorio 7</td><td>Dorm 7</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">300 W</td><td><span class="tag ta">ILUM.</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--blue)">C11</td><td>Tomacorrientes Dormitorio 7</td><td>Dorm 7</td><td style="font-family:'JetBrains Mono',monospace">20 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">2,200 W</td><td><span class="tag tb">TOMAS</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">C12</td><td>Iluminación Dormitorio 8</td><td>Dorm 8</td><td style="font-family:'JetBrains Mono',monospace">10 A</td><td style="font-family:'JetBrains Mono',monospace">1.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">300 W</td><td><span class="tag ta">ILUM.</span></td></tr>
+        <tr><td style="font-family:'JetBrains Mono',monospace;color:var(--blue)">C13</td><td>Tomacorrientes Dormitorio 8</td><td>Dorm 8</td><td style="font-family:'JetBrains Mono',monospace">20 A</td><td style="font-family:'JetBrains Mono',monospace">2.5 mm²</td><td style="font-family:'JetBrains Mono',monospace">2,200 W</td><td><span class="tag tb">TOMAS</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PÁGINA 2 — PLANO CON INSTALACIÓN
+     ═══════════════════════════════════════ -->
+<div class="page" id="pg-plano">
+
+  <div class="card">
+    <div class="ctitle">PLANTA ALTA — INSTALACIÓN ELÉCTRICA COMPLETA</div>
+
+    <div class="plano-wrap">
+      <div class="plano-header">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">Planta Alta — Vivienda Multifamiliar</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">Escala referencial · AEA 90364 · 13 circuitos</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <span class="tag tb">85 m² aprox.</span>
+          <span class="tag tg">13 circuitos</span>
+        </div>
+      </div>
+
+      <!-- SVG PLANO -->
+      <svg viewBox="0 0 820 700" xmlns="http://www.w3.org/2000/svg"
+           style="width:100%;min-width:600px;background:#e8edf2;display:block;font-family:'Rajdhani',sans-serif">
+
+        <!-- FONDO -->
+        <rect width="820" height="700" fill="#e8edf2"/>
+
+        <!-- GRID SUTIL -->
+        <defs>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#d0d8e0" stroke-width="0.5"/>
+          </pattern>
+          <!-- SÍMBOLOS -->
+          <!-- Toma doble -->
+          <symbol id="toma" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="#2B8FE8" stroke-width="1.5"/>
+            <line x1="7" y1="7" x2="7" y2="13" stroke="#2B8FE8" stroke-width="1.5"/>
+            <line x1="13" y1="7" x2="13" y2="13" stroke="#2B8FE8" stroke-width="1.5"/>
+            <line x1="7" y1="10" x2="13" y2="10" stroke="#2B8FE8" stroke-width="1"/>
+          </symbol>
+          <!-- Boca de luz -->
+          <symbol id="luz" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="#F5A623" stroke-width="1.5"/>
+            <circle cx="10" cy="10" r="2" fill="#F5A623"/>
+            <line x1="10" y1="2" x2="10" y2="5" stroke="#F5A623" stroke-width="1.5"/>
+            <line x1="10" y1="15" x2="10" y2="18" stroke="#F5A623" stroke-width="1.5"/>
+            <line x1="2" y1="10" x2="5" y2="10" stroke="#F5A623" stroke-width="1.5"/>
+            <line x1="15" y1="10" x2="18" y2="10" stroke="#F5A623" stroke-width="1.5"/>
+          </symbol>
+          <!-- Interruptor -->
+          <symbol id="inter" viewBox="0 0 16 20">
+            <rect x="1" y="1" width="14" height="18" rx="2" fill="none" stroke="#22C55E" stroke-width="1.5"/>
+            <line x1="4" y1="10" x2="12" y2="10" stroke="#22C55E" stroke-width="2"/>
+            <circle cx="8" cy="10" r="2.5" fill="#22C55E"/>
+          </symbol>
+          <!-- Toma baño (GFCI) -->
+          <symbol id="toma-bano" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="8" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+            <line x1="7" y1="7" x2="7" y2="13" stroke="#A855F7" stroke-width="1.5"/>
+            <line x1="13" y1="7" x2="13" y2="13" stroke="#A855F7" stroke-width="1.5"/>
+            <text x="10" y="16" text-anchor="middle" font-size="5" fill="#A855F7" font-family="'JetBrains Mono'">GF</text>
+          </symbol>
+          <!-- Tablero -->
+          <symbol id="tablero-sym" viewBox="0 0 24 30">
+            <rect x="1" y="1" width="22" height="28" rx="2" fill="#1a1a2e" stroke="#EF4444" stroke-width="2"/>
+            <rect x="4" y="4" width="16" height="22" rx="1" fill="none" stroke="#444" stroke-width="1"/>
+            <line x1="4" y1="10" x2="20" y2="10" stroke="#F5A623" stroke-width="1"/>
+            <line x1="4" y1="16" x2="20" y2="16" stroke="#2B8FE8" stroke-width="1"/>
+            <line x1="4" y1="22" x2="20" y2="22" stroke="#22C55E" stroke-width="1"/>
+          </symbol>
+        </defs>
+        <rect width="820" height="700" fill="url(#grid)"/>
+
+        <!-- ── ESTRUCTURA: MUROS ── -->
+        <!-- Muro exterior norte -->
+        <rect x="60" y="40" width="700" height="12" fill="#c0392b" rx="1"/>
+        <!-- Muro exterior oeste -->
+        <rect x="60" y="40" width="12" height="500" fill="#c0392b" rx="1"/>
+        <!-- Muro exterior este -->
+        <rect x="748" y="40" width="12" height="380" fill="#c0392b" rx="1"/>
+        <!-- Muro exterior sur (parcial) -->
+        <rect x="60" y="528" width="400" height="12" fill="#c0392b" rx="1"/>
+        <!-- Muro sur dormitorio 8 -->
+        <rect x="280" y="590" width="280" height="12" fill="#c0392b" rx="1"/>
+        <!-- Muro este inferior -->
+        <rect x="748" y="420" width="12" height="182" fill="#c0392b" rx="1"/>
+        <!-- Muro sur este -->
+        <rect x="556" y="590" width="204" height="12" fill="#c0392b" rx="1"/>
+
+        <!-- ── MUROS INTERIORES ── -->
+        <!-- División norte-sur central (entre dorms 5-6 y 7-8) -->
+        <rect x="380" y="40" width="10" height="540" fill="#c0392b" rx="1"/>
+        <!-- División este-oeste media (entre fila norte y sur) -->
+        <rect x="60" y="290" width="700" height="10" fill="#c0392b" rx="1"/>
+        <!-- Muro baño norte -->
+        <rect x="490" y="40" width="10" height="160" fill="#c0392b" rx="1"/>
+        <!-- Muro sur baño norte -->
+        <rect x="390" y="195" width="110" height="10" fill="#c0392b" rx="1"/>
+        <!-- Muro baño inferior -->
+        <rect x="556" y="300" width="10" height="180" fill="#c0392b" rx="1"/>
+        <!-- Muro sur baño inferior -->
+        <rect x="390" y="472" width="175" height="10" fill="#c0392b" rx="1"/>
+        <!-- Caja escalera norte -->
+        <rect x="383" y="115" width="104" height="80" fill="none" stroke="#c0392b" stroke-width="6" rx="1"/>
+        <!-- Caja escalera sur -->
+        <rect x="383" y="310" width="104" height="80" fill="none" stroke="#c0392b" stroke-width="6" rx="1"/>
+
+        <!-- ── BALCONES ── -->
+        <!-- Balcón noroeste (junto a Dorm 5) -->
+        <rect x="60" y="40" width="80" height="120" fill="#d5e8d4" stroke="#c0392b" stroke-width="3" rx="1" opacity="0.7"/>
+        <!-- Balcón suroeste (junto a Dorm 7/8) -->
+        <rect x="60" y="528" width="220" height="80" fill="#d5e8d4" stroke="#c0392b" stroke-width="3" rx="1" opacity="0.7"/>
+
+        <!-- ── ESCALERA ── -->
+        <!-- Escalera norte -->
+        <rect x="389" y="121" width="92" height="68" fill="#ddd" stroke="#888" stroke-width="1" rx="1"/>
+        <line x1="389" y1="135" x2="481" y2="135" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="149" x2="481" y2="149" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="163" x2="481" y2="163" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="177" x2="481" y2="177" stroke="#aaa" stroke-width="1"/>
+        <circle cx="435" cy="155" r="18" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4,2"/>
+
+        <!-- Escalera sur -->
+        <rect x="389" y="316" width="92" height="68" fill="#ddd" stroke="#888" stroke-width="1" rx="1"/>
+        <line x1="389" y1="330" x2="481" y2="330" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="344" x2="481" y2="344" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="358" x2="481" y2="358" stroke="#aaa" stroke-width="1"/>
+        <line x1="389" y1="372" x2="481" y2="372" stroke="#aaa" stroke-width="1"/>
+        <circle cx="435" cy="350" r="18" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4,2"/>
+
+        <!-- ── LABELS AMBIENTES ── -->
+        <text x="210" y="170" text-anchor="middle" font-size="15" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Dormitorio 5</text>
+        <text x="210" y="188" text-anchor="middle" font-size="10" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">3,60 × 3,00 m — 10,8 m²</text>
+
+        <text x="610" y="155" text-anchor="middle" font-size="15" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Dormitorio 6</text>
+        <text x="610" y="173" text-anchor="middle" font-size="10" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">3,25 × 3,00 m — 9,75 m²</text>
+
+        <text x="210" y="415" text-anchor="middle" font-size="15" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Dormitorio 7</text>
+        <text x="210" y="433" text-anchor="middle" font-size="10" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">3,50 × 3,00 m — 10,5 m²</text>
+
+        <text x="460" y="545" text-anchor="middle" font-size="15" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Dormitorio 8</text>
+        <text x="460" y="563" text-anchor="middle" font-size="10" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">3,60 × 3,00 m — 10,8 m²</text>
+
+        <text x="440" y="90" text-anchor="middle" font-size="11" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Baño 1</text>
+        <text x="440" y="104" text-anchor="middle" font-size="9" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">2,90×1,50m</text>
+
+        <text x="640" y="410" text-anchor="middle" font-size="11" font-weight="700" fill="#2c3e50" font-family="'Rajdhani',sans-serif">Baño 2</text>
+        <text x="640" y="424" text-anchor="middle" font-size="9" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">3,50×1,50m</text>
+
+        <text x="100" y="90" text-anchor="middle" font-size="10" fill="#27ae60" font-family="'Rajdhani',sans-serif">Balcón</text>
+        <text x="160" y="580" text-anchor="middle" font-size="10" fill="#27ae60" font-family="'Rajdhani',sans-serif">Balcón</text>
+
+        <text x="435" y="226" text-anchor="middle" font-size="9" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">Circulación</text>
+        <text x="435" y="460" text-anchor="middle" font-size="9" fill="#7f8c8d" font-family="'Rajdhani',sans-serif">Circulación</text>
+
+        <!-- ═══ INSTALACIÓN ELÉCTRICA ═══ -->
+
+        <!-- TABLERO PRINCIPAL -->
+        <use href="#tablero-sym" x="698" y="50" width="24" height="30"/>
+        <text x="710" y="90" text-anchor="middle" font-size="8" fill="#EF4444" font-family="'JetBrains Mono',monospace">TABLERO</text>
+        <text x="710" y="99" text-anchor="middle" font-size="8" fill="#EF4444" font-family="'JetBrains Mono',monospace">40A</text>
+
+        <!-- ALIMENTACIÓN DESDE TABLERO (línea principal roja) -->
+        <line x1="710" y1="80" x2="710" y2="240" stroke="#EF4444" stroke-width="2" stroke-dasharray="6,3" opacity="0.6"/>
+        <text x="718" y="160" font-size="8" fill="#EF4444" font-family="'JetBrains Mono',monospace">10mm²</text>
+
+        <!-- ── CIRCUITOS ILUMINACIÓN (naranja/dorado) ── -->
+        <!-- C5: Circulación -->
+        <line x1="700" y1="240" x2="460" y2="240" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.8"/>
+        <line x1="460" y1="240" x2="435" y2="260" stroke="#F5A623" stroke-width="1.5" opacity="0.8"/>
+        <use href="#luz" x="425" y="250" width="20" height="20"/>
+        <text x="445" y="248" font-size="7" fill="#F5A623" font-family="'JetBrains Mono',monospace">C5</text>
+
+        <!-- C6: Iluminación Dorm 5 -->
+        <line x1="200" y1="52" x2="200" y2="130" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <use href="#luz" x="188" y="118" width="20" height="20"/>
+        <text x="175" y="115" font-size="7" fill="#F5A623" font-family="'JetBrains Mono',monospace">C6</text>
+        <!-- Interruptor D5 -->
+        <use href="#inter" x="75" y="190" width="16" height="20"/>
+        <text x="74" y="218" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S1</text>
+        <line x1="83" y1="190" x2="198" y2="128" stroke="#F5A623" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- C8: Iluminación Dorm 6 -->
+        <line x1="610" y1="52" x2="610" y2="115" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <use href="#luz" x="598" y="103" width="20" height="20"/>
+        <text x="622" y="110" font-size="7" fill="#F5A623" font-family="'JetBrains Mono',monospace">C8</text>
+        <!-- Interruptor D6 -->
+        <use href="#inter" x="742" y="115" width="16" height="20"/>
+        <text x="742" y="143" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S3</text>
+        <line x1="742" y1="125" x2="618" y2="113" stroke="#F5A623" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- C10: Iluminación Dorm 7 -->
+        <line x1="200" y1="302" x2="200" y2="380" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <use href="#luz" x="188" y="368" width="20" height="20"/>
+        <text x="175" y="365" font-size="7" fill="#F5A623" font-family="'JetBrains Mono',monospace">C10</text>
+        <!-- Interruptor D7 -->
+        <use href="#inter" x="75" y="320" width="16" height="20"/>
+        <text x="72" y="348" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S5</text>
+        <line x1="83" y1="330" x2="198" y2="378" stroke="#F5A623" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- C12: Iluminación Dorm 8 -->
+        <line x1="460" y1="545" x2="460" y2="510" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+        <use href="#luz" x="448" y="498" width="20" height="20"/>
+        <text x="472" y="505" font-size="7" fill="#F5A623" font-family="'JetBrains Mono',monospace">C12</text>
+        <!-- Interruptor D8 -->
+        <use href="#inter" x="290" y="570" width="16" height="20"/>
+        <text x="288" y="598" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S7</text>
+        <line x1="298" y1="570" x2="458" y2="508" stroke="#F5A623" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+        <!-- ── CIRCUITOS TOMAS (azul) ── -->
+        <!-- C7: Tomas Dorm 5 (3 tomacorrientes) -->
+        <use href="#toma" x="82" y="120" width="20" height="20"/>
+        <text x="82" y="118" font-size="7" fill="#2B8FE8" font-family="'JetBrains Mono',monospace">C7</text>
+        <use href="#toma" x="200" y="218" width="20" height="20"/>
+        <use href="#toma" x="310" y="125" width="20" height="20"/>
+        <line x1="92" y1="130" x2="210" y2="228" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <line x1="210" y1="228" x2="320" y2="135" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+
+        <!-- C9: Tomas Dorm 6 (3 tomacorrientes) -->
+        <use href="#toma" x="735" y="200" width="20" height="20"/>
+        <text x="755" y="205" font-size="7" fill="#2B8FE8" font-family="'JetBrains Mono',monospace">C9</text>
+        <use href="#toma" x="600" y="218" width="20" height="20"/>
+        <use href="#toma" x="500" y="125" width="20" height="20"/>
+        <line x1="735" y1="210" x2="620" y2="228" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <line x1="620" y1="228" x2="510" y2="135" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+
+        <!-- C11: Tomas Dorm 7 (3 tomacorrientes) -->
+        <use href="#toma" x="82" y="360" width="20" height="20"/>
+        <text x="82" y="358" font-size="7" fill="#2B8FE8" font-family="'JetBrains Mono',monospace">C11</text>
+        <use href="#toma" x="200" y="460" width="20" height="20"/>
+        <use href="#toma" x="310" y="360" width="20" height="20"/>
+        <line x1="92" y1="370" x2="210" y2="470" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <line x1="210" y1="470" x2="320" y2="370" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+
+        <!-- C13: Tomas Dorm 8 (3 tomacorrientes) -->
+        <use href="#toma" x="295" y="600" width="20" height="20"/>
+        <text x="316" y="607" font-size="7" fill="#2B8FE8" font-family="'JetBrains Mono',monospace">C13</text>
+        <use href="#toma" x="460" y="596" width="20" height="20"/>
+        <use href="#toma" x="540" y="548" width="20" height="20"/>
+        <line x1="305" y1="600" x2="470" y2="606" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+        <line x1="470" y1="606" x2="550" y2="558" stroke="#2B8FE8" stroke-width="1" stroke-dasharray="4,3" opacity="0.6"/>
+
+        <!-- ── CIRCUITOS BAÑOS (violeta) ── -->
+        <!-- C1+C2: Baño 1 -->
+        <use href="#luz" x="428" y="52" width="20" height="20"/>
+        <text x="433" y="50" font-size="7" fill="#A855F7" font-family="'JetBrains Mono',monospace">C1</text>
+        <use href="#toma-bano" x="497" y="90" width="20" height="20"/>
+        <text x="497" y="88" font-size="7" fill="#A855F7" font-family="'JetBrains Mono',monospace">C2</text>
+        <!-- Interruptor baño 1 -->
+        <use href="#inter" x="395" y="130" width="16" height="20"/>
+        <text x="393" y="158" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S2</text>
+
+        <!-- C3+C4: Baño 2 -->
+        <use href="#luz" x="628" y="340" width="20" height="20"/>
+        <text x="633" y="338" font-size="7" fill="#A855F7" font-family="'JetBrains Mono',monospace">C3</text>
+        <use href="#toma-bano" x="564" y="400" width="20" height="20"/>
+        <text x="563" y="398" font-size="7" fill="#A855F7" font-family="'JetBrains Mono',monospace">C4</text>
+        <!-- Interruptor baño 2 -->
+        <use href="#inter" x="562" y="305" width="16" height="20"/>
+        <text x="560" y="333" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S6</text>
+
+        <!-- C5: Iluminación pasillo / escalera -->
+        <use href="#inter" x="488" y="225" width="16" height="20"/>
+        <text x="486" y="253" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S4</text>
+        <use href="#inter" x="488" y="430" width="16" height="20"/>
+        <text x="486" y="458" font-size="7" fill="#22C55E" font-family="'JetBrains Mono',monospace">S8</text>
+
+        <!-- ── COTAS DE REFERENCIA ── -->
+        <!-- Cota norte -->
+        <line x1="72" y1="30" x2="380" y2="30" stroke="#888" stroke-width="0.5"/>
+        <text x="220" y="26" text-anchor="middle" font-size="9" fill="#666" font-family="'JetBrains Mono',monospace">3,60 m</text>
+        <line x1="390" y1="30" x2="748" y2="30" stroke="#888" stroke-width="0.5"/>
+        <text x="570" y="26" text-anchor="middle" font-size="9" fill="#666" font-family="'JetBrains Mono',monospace">3,25 m (D6) + baño</text>
+        <!-- Cota oeste -->
+        <line x1="46" y1="52" x2="46" y2="290" stroke="#888" stroke-width="0.5"/>
+        <text x="26" y="175" text-anchor="middle" font-size="9" fill="#666" transform="rotate(-90,26,175)" font-family="'JetBrains Mono',monospace">3,60 m</text>
+        <line x1="46" y1="300" x2="46" y2="538" stroke="#888" stroke-width="0.5"/>
+        <text x="26" y="418" text-anchor="middle" font-size="9" fill="#666" transform="rotate(-90,26,418)" font-family="'JetBrains Mono',monospace">3,50 m</text>
+
+        <!-- ── LEYENDA EN EL PLANO ── -->
+        <rect x="565" y="620" width="245" height="70" rx="4" fill="white" stroke="#ccc" stroke-width="1" opacity="0.95"/>
+        <text x="575" y="634" font-size="9" font-weight="700" fill="#333" font-family="'Rajdhani',sans-serif">REFERENCIAS ELÉCTRICAS</text>
+        <!-- luz -->
+        <circle cx="578" cy="648" r="5" fill="none" stroke="#F5A623" stroke-width="1.5"/>
+        <circle cx="578" cy="648" r="1.5" fill="#F5A623"/>
+        <text x="587" y="652" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Boca de luz (C6,8,10,12)</text>
+        <!-- toma -->
+        <circle cx="578" cy="664" r="5" fill="none" stroke="#2B8FE8" stroke-width="1.5"/>
+        <line x1="575" y1="661" x2="575" y2="667" stroke="#2B8FE8" stroke-width="1.5"/>
+        <line x1="581" y1="661" x2="581" y2="667" stroke="#2B8FE8" stroke-width="1.5"/>
+        <text x="587" y="668" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Tomacorriente doble (C7,9,11,13)</text>
+        <!-- inter -->
+        <rect x="573" y="676" width="9" height="11" rx="1" fill="none" stroke="#22C55E" stroke-width="1.5"/>
+        <text x="587" y="684" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Interruptor simple (S1–S8)</text>
+        <!-- toma baño -->
+        <circle cx="694" cy="648" r="5" fill="none" stroke="#A855F7" stroke-width="1.5"/>
+        <line x1="691" y1="645" x2="691" y2="651" stroke="#A855F7" stroke-width="1.5"/>
+        <line x1="697" y1="645" x2="697" y2="651" stroke="#A855F7" stroke-width="1.5"/>
+        <text x="703" y="652" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Toma GFCI baño (C2,C4)</text>
+        <!-- línea ilum -->
+        <line x1="694" y1="662" x2="705" y2="662" stroke="#F5A623" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="709" y="666" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Circuito iluminación</text>
+        <!-- línea tomas -->
+        <line x1="694" y1="676" x2="705" y2="676" stroke="#2B8FE8" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="709" y="680" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Circuito tomacorrientes</text>
+        <!-- línea baños -->
+        <line x1="694" y1="688" x2="705" y2="688" stroke="#A855F7" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="709" y="692" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">Circuito baño (proteg. DIF)</text>
+
+      </svg>
+    </div>
+
+    <!-- PLANO LEGEND -->
+    <div class="plano-legend">
+      <div class="pl-item"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="#F5A623" stroke-width="1.5"/><circle cx="8" cy="8" r="2" fill="#F5A623"/></svg> <span>Boca de luz (iluminación)</span></div>
+      <div class="pl-item"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="#2B8FE8" stroke-width="1.5"/><line x1="5" y1="5" x2="5" y2="11" stroke="#2B8FE8" stroke-width="1.5"/><line x1="11" y1="5" x2="11" y2="11" stroke="#2B8FE8" stroke-width="1.5"/></svg> <span>Tomacorriente doble</span></div>
+      <div class="pl-item"><svg width="14" height="16"><rect x="1" y="1" width="12" height="14" rx="2" fill="none" stroke="#22C55E" stroke-width="1.5"/></svg> <span>Interruptor simple</span></div>
+      <div class="pl-item"><svg width="16" height="16"><circle cx="8" cy="8" r="6" fill="none" stroke="#A855F7" stroke-width="1.5"/></svg> <span>Toma GFCI baño (con diferencial)</span></div>
+      <div class="pl-item"><svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="#F5A623" stroke-width="2" stroke-dasharray="5,3"/></svg> <span>Cañería circuito iluminación (1.5mm²)</span></div>
+      <div class="pl-item"><svg width="20" height="10"><line x1="0" y1="5" x2="20" y2="5" stroke="#2B8FE8" stroke-width="2" stroke-dasharray="5,3"/></svg> <span>Cañería circuito tomas (2.5mm²)</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PÁGINA 3 — CÓMPUTO DE MATERIALES
+     ═══════════════════════════════════════ -->
+<div class="page" id="pg-cables">
+
+  <div class="stitle">Cableado y cañería</div>
+  <div class="cable-grid">
+    <div class="cable-box">
+      <div class="cable-val">120</div>
+      <div class="cable-label">metros — Cable 1.5mm²</div>
+      <div class="cable-line" style="background:linear-gradient(90deg,#F5A623,#C47D0E)"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:6px">Circuitos de iluminación (C5,C6,C8,C10,C12 + baños)</div>
+    </div>
+    <div class="cable-box">
+      <div class="cable-val">180</div>
+      <div class="cable-label">metros — Cable 2.5mm²</div>
+      <div class="cable-line" style="background:linear-gradient(90deg,#2B8FE8,#1a6abf)"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:6px">Circuitos de tomas (C7,C9,C11,C13 + baños)</div>
+    </div>
+    <div class="cable-box">
+      <div class="cable-val">15</div>
+      <div class="cable-label">metros — Cable 10mm²</div>
+      <div class="cable-line" style="background:linear-gradient(90deg,#EF4444,#b91c1c)"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:6px">Alimentación tablero desde planta baja</div>
+    </div>
+    <div class="cable-box">
+      <div class="cable-val">150</div>
+      <div class="cable-label">metros — Cañería 20mm</div>
+      <div class="cable-line" style="background:linear-gradient(90deg,#64748B,#475569)"></div>
+      <div style="font-size:9px;color:var(--muted);margin-top:6px">Corrugada + semipesada por ambientes</div>
+    </div>
+  </div>
+
+  <div class="stitle">Lista completa de materiales</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>MATERIAL</th><th>CANT.</th><th>UNIDAD</th><th>PRECIO UNIT. (ARS)</th><th>SUBTOTAL (ARS)</th></tr>
+      </thead>
+      <tbody id="matTable"></tbody>
+    </table>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);margin-top:8px">
+      <span style="font-size:15px;font-weight:700">TOTAL MATERIALES (sin mano de obra, sin IVA)</span>
+      <span id="totalMat" style="font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)"></span>
+    </div>
+    <div style="font-size:10px;color:var(--muted);text-align:right">Precios de referencia — mercado ARG 2025 · No incluye mano de obra ni IVA (21%)</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     PÁGINA 4 — RESUMEN GENERAL
+     ═══════════════════════════════════════ -->
+<div class="page" id="pg-resumen">
+  <div class="card">
+    <div class="ctitle">RESUMEN DE LA INSTALACIÓN — PLANTA ALTA</div>
+    <table>
+      <thead><tr><th>AMBIENTE</th><th>SUPERFICIE</th><th>CIRCUITOS</th><th>BOCAS LUZ</th><th>TOMAS</th><th>INTERRUPTORES</th><th>OBSERVACIONES</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:700">Dormitorio 5</td><td style="font-family:'JetBrains Mono',monospace">10,8 m²</td><td style="font-family:'JetBrains Mono',monospace">C6 + C7</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">3</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--muted)">Ilum. 10A · Tomas 20A</td></tr>
+        <tr><td style="font-weight:700">Dormitorio 6</td><td style="font-family:'JetBrains Mono',monospace">9,75 m²</td><td style="font-family:'JetBrains Mono',monospace">C8 + C9</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">3</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--muted)">Ilum. 10A · Tomas 20A</td></tr>
+        <tr><td style="font-weight:700">Dormitorio 7</td><td style="font-family:'JetBrains Mono',monospace">10,5 m²</td><td style="font-family:'JetBrains Mono',monospace">C10 + C11</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">3</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--muted)">Ilum. 10A · Tomas 20A</td></tr>
+        <tr><td style="font-weight:700">Dormitorio 8</td><td style="font-family:'JetBrains Mono',monospace">10,8 m²</td><td style="font-family:'JetBrains Mono',monospace">C12 + C13</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">3</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--muted)">Ilum. 10A · Tomas 20A</td></tr>
+        <tr><td style="font-weight:700">Baño Superior</td><td style="font-family:'JetBrains Mono',monospace">4,35 m²</td><td style="font-family:'JetBrains Mono',monospace">C1 + C2</td><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">1 GFCI</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--purple)">Diferencial 25A/30mA</td></tr>
+        <tr><td style="font-weight:700">Baño Inferior</td><td style="font-family:'JetBrains Mono',monospace">5,25 m²</td><td style="font-family:'JetBrains Mono',monospace">C3 + C4</td><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">1</td><td style="font-family:'JetBrains Mono',monospace;color:var(--purple)">1 GFCI</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">1</td><td style="font-size:11px;color:var(--purple)">Diferencial 25A/30mA</td></tr>
+        <tr><td style="font-weight:700">Circulación</td><td style="font-family:'JetBrains Mono',monospace">~8 m²</td><td style="font-family:'JetBrains Mono',monospace">C5</td><td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">2</td><td style="font-family:'JetBrains Mono',monospace;color:var(--muted)">—</td><td style="font-family:'JetBrains Mono',monospace;color:var(--green)">2</td><td style="font-size:11px;color:var(--muted)">Escalera + pasillo · 3 vías</td></tr>
+        <tr style="background:rgba(245,166,35,.05)">
+          <td style="font-weight:700;color:var(--accent)">TOTAL PLANTA</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">~85 m²</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">13 circ.</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">8</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">14</td>
+          <td style="font-family:'JetBrains Mono',monospace;color:var(--accent)">9</td>
+          <td style="font-size:11px;color:var(--muted)">+ 2 diferenciales baños</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">CUMPLIMIENTO AEA 90364</div>
+    <div class="al al-g"><span>✓</span><span>Circuitos de iluminación independientes por ambiente — máx. 8 bocas por circuito ✓</span></div>
+    <div class="al al-g"><span>✓</span><span>Circuitos de tomacorrientes independientes por ambiente — máx. 6 bocas por circuito ✓</span></div>
+    <div class="al al-g"><span>✓</span><span>Baños con diferencial exclusivo 25A/30mA — protección por zona húmeda ✓</span></div>
+    <div class="al al-g"><span>✓</span><span>Sección mínima de cable: 1.5mm² iluminación · 2.5mm² tomas ✓</span></div>
+    <div class="al al-w"><span>⚠</span><span>Verificar caída de tensión en circuitos más alejados del tablero — distancias superiores a 20m pueden requerir aumento de sección a 4mm².</span></div>
+    <div class="al al-b"><span>ℹ</span><span>Se recomienda tablero de 24 módulos para permitir ampliaciones futuras (actualmente se usan 18 módulos).</span></div>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.pg-tab').forEach(t => t.classList.remove('on'));
+  document.getElementById('pg-'+id).classList.add('on');
+  event.currentTarget.classList.add('on');
+}
+
+// Materiales
+var mats = [
+  { item:'Cable 1.5mm² IRAM (iluminación)', cant:120, u:'m', p:620 },
+  { item:'Cable 2.5mm² IRAM (tomacorrientes)', cant:180, u:'m', p:850 },
+  { item:'Cable 10mm² IRAM (alimentación tablero)', cant:15, u:'m', p:2800 },
+  { item:'Cañería corrugada 20mm', cant:130, u:'m', p:380 },
+  { item:'Cañería semipesada 3/4"', cant:20, u:'m', p:520 },
+  { item:'Tablero 24 módulos c/puerta', cant:1, u:'u', p:18500 },
+  { item:'Interruptor termomagnético 10A', cant:5, u:'u', p:3800 },
+  { item:'Interruptor termomagnético 16A', cant:2, u:'u', p:4200 },
+  { item:'Interruptor termomagnético 20A', cant:4, u:'u', p:5200 },
+  { item:'Interruptor termomagnético 40A (IGA)', cant:1, u:'u', p:9800 },
+  { item:'Disyuntor diferencial 25A / 30mA', cant:2, u:'u', p:12000 },
+  { item:'Tomacorriente doble 2P+T Schuko', cant:14, u:'u', p:2800 },
+  { item:'Tomacorriente GFCI para baño', cant:2, u:'u', p:5500 },
+  { item:'Plafón/boca de luz c/portalámparas', cant:10, u:'u', p:1200 },
+  { item:'Interruptor simple 10A', cant:8, u:'u', p:1800 },
+  { item:'Interruptor 3 vías (escalera)', cant:2, u:'u', p:2400 },
+  { item:'Caja rectangular plástica', cant:30, u:'u', p:420 },
+  { item:'Caja octogonal plástica', cant:10, u:'u', p:380 },
+  { item:'Cinta aisladora (rollos)', cant:5, u:'u', p:550 },
+  { item:'Grampas para cañería (bolsa)', cant:3, u:'u', p:800 },
+];
+
+var tbody = document.getElementById('matTable');
+var total = 0;
+mats.forEach(function(m) {
+  var sub = m.cant * m.p;
+  total += sub;
+  tbody.innerHTML += '<tr>' +
+    '<td style="font-weight:500">'+m.item+'</td>' +
+    '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent)">'+m.cant+'</td>' +
+    '<td style="color:var(--muted)">'+m.u+'</td>' +
+    '<td style="font-family:\'JetBrains Mono\',monospace">'+m.p.toLocaleString('es-AR')+'</td>' +
+    '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-weight:700">'+sub.toLocaleString('es-AR')+'</td>' +
+    '</tr>';
+});
+document.getElementById('totalMat').textContent = 'ARS ' + total.toLocaleString('es-AR');
+</script>
+</body>
+</html>
