@@ -124,6 +124,78 @@ tr:hover td{background:rgba(245,166,35,.03)}
   .cable-grid{grid-template-columns:1fr 1fr}.page{padding:14px}
   .bk{width:38px;min-height:72px}.bk-amp{font-size:8px}
 }
+
+/* ═══ EDITOR 2D ═══ */
+.edit-toggle{padding:7px 14px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font-family:'Rajdhani',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all .15s;white-space:nowrap}
+.edit-toggle.on{border-color:#A855F7;color:#A855F7;background:rgba(168,85,247,.12)}
+
+.room-zone{fill:#A855F7;opacity:0;cursor:pointer;transition:opacity .15s}
+.room-zone:hover{opacity:0.10}
+.edit-active .room-zone{pointer-events:all}
+.edit-active .room-zone:hover{opacity:0.12;stroke:#A855F7;stroke-width:2;stroke-dasharray:4,3}
+
+.added-el{cursor:pointer}
+.edit-active .added-el:hover{filter:drop-shadow(0 0 4px #A855F7)}
+
+/* placement menu (2D) */
+.place-menu-2d{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(22,27,34,.97);border:1px solid #A855F7;border-radius:12px;
+  padding:16px;z-index:200;backdrop-filter:blur(10px);min-width:250px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);display:none}
+.place-menu-2d.show{display:block}
+.place-menu-2d .place-title{font-size:11px;font-weight:700;letter-spacing:2px;color:#A855F7;
+  text-transform:uppercase;margin-bottom:12px;text-align:center}
+.place-menu-2d .place-room{font-size:10px;color:var(--muted);text-align:center;margin-bottom:10px;
+  font-family:'JetBrains Mono',monospace}
+.place-opt-2d{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+  border:1px solid var(--border);background:rgba(255,255,255,.02);margin-bottom:6px;
+  cursor:pointer;transition:all .15s;font-size:13px;font-weight:600}
+.place-opt-2d:hover{border-color:#A855F7;background:rgba(168,85,247,.1)}
+.place-opt-2d .ico{font-size:18px;width:24px;text-align:center}
+.place-opt-2d .meta{flex:1}
+.place-opt-2d .price{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.place-cancel-2d{margin-top:8px;text-align:center;padding:8px;border-radius:8px;
+  border:1px solid var(--border);font-size:12px;color:var(--muted);cursor:pointer;font-weight:700}
+.place-overlay-2d{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.place-overlay-2d.show{display:block}
+
+/* AEA toast (2D) */
+.aea-toast-2d{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:rgba(234,179,8,.15);border:1px solid var(--yellow);border-radius:8px;
+  padding:10px 18px;font-size:12px;font-weight:700;color:var(--yellow);
+  z-index:210;opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
+.aea-toast-2d.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aea-toast-2d.ok{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
+
+/* budget panel (2D) */
+.budget-panel-2d{position:fixed;top:70px;right:14px;width:270px;max-height:75vh;overflow-y:auto;
+  background:rgba(22,27,34,.97);border:1px solid var(--border);border-radius:10px;
+  padding:14px;z-index:120;backdrop-filter:blur(10px);transition:transform .25s, opacity .25s;
+  box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.budget-panel-2d.hidden{transform:translateX(300px);opacity:0;pointer-events:none}
+.budget-title-2d{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.budget-close-2d{cursor:pointer;color:var(--muted);font-size:14px}
+.budget-section-2d{margin-bottom:10px}
+.budget-section-title-2d{font-size:9px;color:#A855F7;letter-spacing:1px;font-weight:700;margin-bottom:6px;
+  border-bottom:1px solid rgba(168,85,247,.2);padding-bottom:3px}
+.budget-row-2d{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
+.budget-row-2d .qty{font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700;min-width:24px;text-align:right}
+.budget-row-2d .name{flex:1;padding:0 6px;color:var(--text)}
+.budget-row-2d .sub{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:10px}
+.budget-total-2d{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0 4px;border-top:1px solid var(--border);margin-top:8px}
+.budget-total-lbl-2d{font-size:12px;font-weight:700}
+.budget-total-val-2d{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
+.budget-reset-2d{margin-top:10px;text-align:center;padding:7px;border-radius:6px;
+  border:1px solid var(--border);font-size:10px;color:var(--muted);cursor:pointer}
+.budget-reset-2d:hover{border-color:var(--red);color:var(--red)}
+.sync-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;color:var(--green);
+  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);padding:2px 8px;border-radius:10px;
+  font-family:'JetBrains Mono',monospace;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -135,10 +207,34 @@ tr:hover td{background:rgba(245,166,35,.03)}
     <div class="hdr-s">R. ROJAS ESQ. M. STROBEL · AEA 90364 · 2 MEDIDORES</div>
   </div>
   <span class="bdg">AEA 90364 · ARG</span>
-  <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+  <span class="sync-badge" id="syncBadge" style="display:none">🔗 sincronizado con 3D</span>
+  <button class="edit-toggle" id="editToggle2d" onclick="toggleEdit2d()">✏️ Editar plano</button>
+  <button class="edit-toggle" id="budgetToggle2d" onclick="toggleBudget2d()">💰 Presupuesto</button>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
     <span class="tag tb">Unidad 1 — Norte</span>
     <span class="tag to">Unidad 2 — Sur</span>
   </div>
+</div>
+
+<!-- AEA TOAST -->
+<div class="aea-toast-2d" id="aeaToast2d"></div>
+
+<!-- BUDGET PANEL -->
+<div class="budget-panel-2d hidden" id="budgetPanel2d">
+  <div class="budget-title-2d">
+    <span>💰 Cómputo y presupuesto</span>
+    <span class="budget-close-2d" onclick="toggleBudget2d()">✕</span>
+  </div>
+  <div id="budgetContent2d"></div>
+</div>
+
+<!-- PLACEMENT MENU -->
+<div class="place-overlay-2d" id="placeOverlay2d" onclick="closePlaceMenu2d()"></div>
+<div class="place-menu-2d" id="placeMenu2d">
+  <div class="place-title">Agregar elemento</div>
+  <div class="place-room" id="placeRoomName2d"></div>
+  <div id="placeOptions2d"></div>
+  <div class="place-cancel-2d" onclick="closePlaceMenu2d()">Cancelar</div>
 </div>
 
 <div class="pg-tabs">
@@ -383,7 +479,7 @@ tr:hover td{background:rgba(245,166,35,.03)}
     </div>
 
     <div style="background:#e8edf2;border-radius:8px;overflow-x:auto;border:1px solid var(--border)">
-    <svg viewBox="0 0 860 720" xmlns="http://www.w3.org/2000/svg"
+    <svg id="planoSvg" viewBox="0 0 860 720" xmlns="http://www.w3.org/2000/svg"
          style="width:100%;min-width:620px;background:#e8edf2;display:block;font-family:'Rajdhani',sans-serif">
 
       <defs>
@@ -694,6 +790,19 @@ tr:hover td{background:rgba(245,166,35,.03)}
       <circle cx="200" cy="703" r="5" fill="none" stroke="#A855F7" stroke-width="1.5"/>
       <text x="209" y="706" font-size="8" fill="#555" font-family="'Rajdhani',sans-serif">GFCI Toilette (C1,C2 · DIF 30mA)</text>
 
+      <!-- ═══ ZONAS CLICKEABLES (editor) ═══ -->
+      <g id="roomZones">
+        <rect class="room-zone" data-room="ec1" x="67" y="57" width="283" height="273"/>
+        <rect class="room-zone" data-room="coc2" x="470" y="45" width="233" height="145"/>
+        <rect class="room-zone" data-room="toil1" x="360" y="190" width="100" height="140"/>
+        <rect class="room-zone" data-room="ec3" x="67" y="344" width="283" height="279"/>
+        <rect class="room-zone" data-room="coc4" x="470" y="385" width="233" height="238"/>
+        <rect class="room-zone" data-room="toil2" x="360" y="490" width="100" height="143"/>
+      </g>
+
+      <!-- ═══ ELEMENTOS AGREGADOS (editor, se llenan por JS) ═══ -->
+      <g id="addedElements"></g>
+
     </svg>
     </div>
 
@@ -830,6 +939,417 @@ mats.forEach(function(m){
     '</tr>';
 });
 document.getElementById('totalMat').textContent='ARS '+total.toLocaleString('es-AR');
+
+// ═══════════════════════════════════════════════════════════
+// EDITOR 2D — agregar elementos sobre el plano, sincronizado con 3D
+// ═══════════════════════════════════════════════════════════
+
+// Misma clave que usa el recorrido 3D (3d-planta-alta.html) -> elementos compartidos
+const STORAGE_KEY_2D = 'electrocad_pb_2unidades_v1';
+
+// Metadatos de cada ambiente: nombre visible + qué circuitos "base" tiene
+// (usados para decidir a qué circuito asignar un elemento nuevo)
+const ROOM_META = {
+  ec1:   { name:'Estar Comedor ① (U1)', lightCircuits:['C3'], tomaCircuits:['C4'], lightBaseCount:2, tomaBaseCount:4 },
+  coc2:  { name:'Cocina ② (U1)',        lightCircuits:['C5'], tomaCircuits:['C6'], lightBaseCount:1, tomaBaseCount:1 },
+  toil1: { name:'Toilette (U1)',        lightCircuits:['C1'], tomaCircuits:['C2'], lightBaseCount:1, tomaBaseCount:1 },
+  ec3:   { name:'Estar Comedor ③ (U2)', lightCircuits:['C3'], tomaCircuits:['C4'], lightBaseCount:2, tomaBaseCount:4 },
+  coc4:  { name:'Cocina ④ (U2)',        lightCircuits:['C5'], tomaCircuits:['C6'], lightBaseCount:1, tomaBaseCount:1 },
+  toil2: { name:'Toilette (U2)',        lightCircuits:['C1'], tomaCircuits:['C2'], lightBaseCount:1, tomaBaseCount:1 },
+};
+
+// Materiales (idéntico al editor 3D para que el cómputo coincida)
+const MATERIALES_2D = {
+  toma:        { nombre:'Tomacorriente doble 2P+T', precio:2800, extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  'toma-gf':   { nombre:'Tomacorriente GFCI (baño)', precio:5500, extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  'toma-esp':  { nombre:'Tomacorriente especial (cocina)', precio:4200, extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  luz:         { nombre:'Boca de luz c/portalámparas', precio:1200, extra:{cable:'1.5mm²', metrosPorBoca:3, precioCable:620, caja:'octogonal', precioCaja:380, caneria:2.5, precioCaneria:380} },
+  interruptor: { nombre:'Interruptor simple 10A', precio:1800, extra:{cable:'1.5mm²', metrosPorBoca:2, precioCable:620, caja:'rectangular', precioCaja:420, caneria:2, precioCaneria:380} },
+};
+const AEA_LIMITS_2D = { luz: 8, toma: 6 };
+
+// SVG bounding box per room (matches #roomZones rects) + real size in meters (matches 3D ROOMS)
+const ROOM_SVG_BOUNDS = {
+  ec1:   { x:67,  y:57,  w:283, h:273, mw:7.25, md:6.10 },
+  coc2:  { x:470, y:45,  w:233, h:145, mw:3.35, md:2.75 },
+  toil1: { x:360, y:190, w:100, h:140, mw:1.70, md:1.50 },
+  ec3:   { x:67,  y:344, w:283, h:279, mw:6.75, md:5.60 },
+  coc4:  { x:470, y:385, w:233, h:238, mw:3.35, md:2.75 },
+  toil2: { x:360, y:490, w:100, h:143, mw:1.80, md:0.90 },
+};
+
+// Convert an SVG click point (within a room's zone) to a 3D position [x,y,z] + wall
+// 3D room coords: x in [-w/2, w/2], z in [-d/2, d/2], origin at room center.
+function svgToWorld3d(roomKey, svgX, svgY, type) {
+  const b = ROOM_SVG_BOUNDS[roomKey];
+  if (!b) return { pos:[0, 0.5, 0], wall: undefined };
+
+  // normalized position within room [0..1]
+  const nx = clamp01((svgX - b.x) / b.w);
+  const ny = clamp01((svgY - b.y) / b.h);
+
+  // world x,z centered at 0
+  const wx = (nx - 0.5) * b.mw;
+  const wz = (ny - 0.5) * b.md;
+
+  if (type === 'luz') {
+    // ceiling light, position near where clicked (x,z), y handled by 3D (h)
+    return { pos:[round2(wx), 2.5, round2(wz)], wall: undefined };
+  }
+
+  // For wall-mounted elements, snap to nearest wall based on position
+  const distLeft = nx, distRight = 1-nx, distTop = ny, distBottom = 1-ny;
+  const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+  let wall, pos;
+  const yPos = type === 'interruptor' ? 1.1 : 0.5;
+
+  if (minDist === distLeft) { wall='left';  pos=[round2(-b.mw/2 + 0.05), yPos, round2(wz)]; }
+  else if (minDist === distRight) { wall='right'; pos=[round2(b.mw/2 - 0.05), yPos, round2(wz)]; }
+  else if (minDist === distTop) { wall='back';  pos=[round2(wx), yPos, round2(-b.md/2 + 0.05)]; }
+  else { wall='front'; pos=[round2(wx), yPos, round2(b.md/2 - 0.05)]; }
+
+  return { pos, wall };
+}
+function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+function round2(v){ return Math.round(v*100)/100; }
+
+let editMode2d = false;
+let budgetOpen2d = false;
+let pendingPlacement2d = null; // {roomKey, x, y}
+
+
+// ── Persistence helpers (shared format with 3D) ──
+function loadAdded2d() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_2D);
+    return raw ? JSON.parse(raw) : {};
+  } catch(e) { return {}; }
+}
+function saveAdded2d(data) {
+  try { localStorage.setItem(STORAGE_KEY_2D, JSON.stringify(data)); } catch(e) {}
+}
+
+// ── Generate unique id per room ──
+function genId2d(data, roomKey, prefix) {
+  const list = data[roomKey] || [];
+  let n = 1;
+  const existing = list.map(e => e.id);
+  while (existing.includes(prefix + n)) n++;
+  return prefix + n;
+}
+
+// ── Pick circuit (same AEA logic as 3D) ──
+function pickCircuit2d(data, roomKey, type) {
+  const meta = ROOM_META[roomKey];
+  const list = data[roomKey] || [];
+  const isLightFamily = (type === 'luz' || type === 'interruptor');
+  const limit = isLightFamily ? AEA_LIMITS_2D.luz : AEA_LIMITS_2D.toma;
+  const familyTypes = isLightFamily ? ['luz','interruptor'] : ['toma','toma-gf','toma-esp'];
+  const baseCircuits = isLightFamily ? meta.lightCircuits : meta.tomaCircuits;
+  const baseCount = isLightFamily ? (meta.lightBaseCount||1) : (meta.tomaBaseCount||3);
+
+  const counts = {};
+  baseCircuits.forEach(c => counts[c] = baseCount);
+  list.forEach(e => {
+    if (familyTypes.includes(e.type)) {
+      counts[e.circuit] = (counts[e.circuit]||0) + (e.type==='interruptor' ? 0 : 1);
+    }
+  });
+
+  let chosen = null, exceeded = false;
+  for (const [circ, cnt] of Object.entries(counts)) {
+    if (cnt < limit) { chosen = circ; break; }
+  }
+  if (!chosen) {
+    const base = baseCircuits[0] || 'C-NUEVO';
+    chosen = base + '-B';
+    exceeded = true;
+  }
+  return { circuit: chosen, exceeded, limit };
+}
+
+// ── Toggle edit mode ──
+function toggleEdit2d() {
+  editMode2d = !editMode2d;
+  document.getElementById('editToggle2d').classList.toggle('on', editMode2d);
+  document.getElementById('planoSvg').classList.toggle('edit-active', editMode2d);
+  if (!editMode2d) closePlaceMenu2d();
+}
+
+// ── Open placement menu for a room ──
+function openPlaceMenu2d(roomKey, svgX, svgY) {
+  pendingPlacement2d = { roomKey, x: svgX, y: svgY };
+  const meta = ROOM_META[roomKey];
+  document.getElementById('placeRoomName2d').textContent = meta.name;
+
+  const isBath = roomKey.startsWith('toil');
+  const isKitchen = roomKey.startsWith('coc');
+
+  const options = [
+    { type:'toma', label:'Tomacorriente', icon:'⬡' },
+    isBath ? { type:'toma-gf', label:'Tomacorriente GFCI (baño)', icon:'⬡' } : null,
+    isKitchen ? { type:'toma-esp', label:'Toma especial (cocina/AC)', icon:'⬡' } : { type:'toma-esp', label:'Toma especial (AC/electrodoméstico)', icon:'⬡' },
+    { type:'interruptor', label:'Interruptor', icon:'⧉' },
+    { type:'luz', label:'Boca de luz', icon:'💡' },
+  ].filter(Boolean);
+
+  const opts = document.getElementById('placeOptions2d');
+  opts.innerHTML = '';
+  options.forEach(opt => {
+    const mat = MATERIALES_2D[opt.type];
+    const div = document.createElement('div');
+    div.className = 'place-opt-2d';
+    div.innerHTML = `<span class="ico">${opt.icon}</span>
+      <span class="meta">${opt.label}<div class="price">+ARS ${mat.precio.toLocaleString('es-AR')} (material)${mat.extra?` · +${mat.extra.metrosPorBoca}m ${mat.extra.cable}`:''}</div></span>`;
+    div.onclick = () => placeElement2d(opt.type);
+    opts.appendChild(div);
+  });
+
+  document.getElementById('placeOverlay2d').classList.add('show');
+  document.getElementById('placeMenu2d').classList.add('show');
+}
+function closePlaceMenu2d() {
+  document.getElementById('placeOverlay2d').classList.remove('show');
+  document.getElementById('placeMenu2d').classList.remove('show');
+  pendingPlacement2d = null;
+}
+
+// ── Place a new element ──
+function placeElement2d(type) {
+  if (!pendingPlacement2d) return;
+  const { roomKey, x, y } = pendingPlacement2d;
+  const data = loadAdded2d();
+  if (!data[roomKey]) data[roomKey] = [];
+
+  const circuitInfo = pickCircuit2d(data, roomKey, type);
+  const termica = type === 'interruptor' || type === 'luz' ? '10A' : (type === 'toma-gf' ? '16A' : '20A');
+  const id = genId2d(data, roomKey, type==='luz'?'L':type==='interruptor'?'S':'T');
+  const world = svgToWorld3d(roomKey, x, y, type);
+
+  const newEl = {
+    type, id,
+    circuit: circuitInfo.circuit,
+    termica,
+    pos2d: [Math.round(x), Math.round(y)],
+    pos: world.pos,
+    wall: world.wall,
+    power: type==='luz' ? 60 : (type==='toma-esp' ? 1500 : 0),
+    on: type==='luz' ? true : undefined,
+    userAdded: true,
+  };
+
+  data[roomKey].push(newEl);
+  saveAdded2d(data);
+  closePlaceMenu2d();
+  renderAddedElements2d();
+  refreshBudgetIfOpen2d();
+
+  if (circuitInfo.exceeded) {
+    showAeaToast2d(`⚠ AEA 90364: el circuito alcanzó el límite de ${circuitInfo.limit===AEA_LIMITS_2D.luz?'8 bocas de luz':'6 tomas'} en ${ROOM_META[roomKey].name}. Se asignó circuito nuevo sugerido: ${circuitInfo.circuit}.`, false);
+  } else {
+    showAeaToast2d(`✓ Elemento agregado al circuito ${circuitInfo.circuit} en ${ROOM_META[roomKey].name} — dentro de los límites AEA 90364. También visible en el recorrido 3D.`, true);
+  }
+}
+
+// ── Delete an added element ──
+function deleteElement2d(roomKey, id) {
+  const data = loadAdded2d();
+  if (!data[roomKey]) return;
+  data[roomKey] = data[roomKey].filter(e => e.id !== id);
+  saveAdded2d(data);
+  renderAddedElements2d();
+  refreshBudgetIfOpen2d();
+  showAeaToast2d(`🗑️ Elemento ${id} eliminado de ${ROOM_META[roomKey].name}.`, true);
+}
+
+// ── Render all added elements as SVG symbols ──
+const SYMBOL_FOR_TYPE = { toma:'toma', 'toma-gf':'toma-b', 'toma-esp':'toma-coc', luz:'luz', interruptor:'inter' };
+const COLOR_FOR_TYPE = { toma:'#2B8FE8', 'toma-gf':'#A855F7', 'toma-esp':'#06B6D4', luz:'#F5A623', interruptor:'#22C55E' };
+
+function renderAddedElements2d() {
+  const data = loadAdded2d();
+  const g = document.getElementById('addedElements');
+  g.innerHTML = '';
+  let any = false;
+
+  Object.keys(data).forEach(roomKey => {
+    (data[roomKey] || []).forEach(el => {
+      any = true;
+      const [x, y] = el.pos2d || [0,0];
+      const sym = SYMBOL_FOR_TYPE[el.type] || 'toma';
+      const color = COLOR_FOR_TYPE[el.type] || '#fff';
+      const size = el.type === 'interruptor' ? 16 : 20;
+
+      const wrap = document.createElementNS('http://www.w3.org/2000/svg','g');
+      wrap.setAttribute('class','added-el');
+      wrap.setAttribute('data-room', roomKey);
+      wrap.setAttribute('data-id', el.id);
+
+      // pulsing ring to indicate "new"
+      const ring = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ring.setAttribute('cx', x + size/2);
+      ring.setAttribute('cy', y + size/2);
+      ring.setAttribute('r', size/2 + 4);
+      ring.setAttribute('fill','none');
+      ring.setAttribute('stroke', color);
+      ring.setAttribute('stroke-width','1');
+      ring.setAttribute('stroke-dasharray','3,2');
+      ring.setAttribute('opacity','0.6');
+      wrap.appendChild(ring);
+
+      const use = document.createElementNS('http://www.w3.org/2000/svg','use');
+      use.setAttribute('href','#'+sym);
+      use.setAttribute('x', x); use.setAttribute('y', y);
+      use.setAttribute('width', size); use.setAttribute('height', size);
+      wrap.appendChild(use);
+
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', x + size/2);
+      label.setAttribute('y', y - 4);
+      label.setAttribute('text-anchor','middle');
+      label.setAttribute('font-size','6.5');
+      label.setAttribute('fill', color);
+      label.setAttribute('font-family','JetBrains Mono, monospace');
+      label.textContent = el.circuit;
+      wrap.appendChild(label);
+
+      wrap.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (editMode2d) deleteElement2d(roomKey, el.id);
+      });
+
+      g.appendChild(wrap);
+    });
+  });
+
+  document.getElementById('syncBadge').style.display = any ? 'inline-flex' : 'none';
+}
+
+// ── AEA toast ──
+let aeaToastTimer2d;
+function showAeaToast2d(msg, ok) {
+  const el = document.getElementById('aeaToast2d');
+  el.textContent = msg;
+  el.classList.toggle('ok', ok);
+  el.classList.add('show');
+  clearTimeout(aeaToastTimer2d);
+  aeaToastTimer2d = setTimeout(() => el.classList.remove('show'), 5000);
+}
+
+// ── Budget panel ──
+function toggleBudget2d() {
+  budgetOpen2d = !budgetOpen2d;
+  document.getElementById('budgetPanel2d').classList.toggle('hidden', !budgetOpen2d);
+  document.getElementById('budgetToggle2d').classList.toggle('on', budgetOpen2d);
+  if (budgetOpen2d) refreshBudget2d();
+}
+function refreshBudgetIfOpen2d() { if (budgetOpen2d) refreshBudget2d(); }
+
+function calcBudget2d() {
+  const data = loadAdded2d();
+  const sections = [];
+  let grandTotal = 0;
+
+  Object.keys(data).forEach(roomKey => {
+    const added = data[roomKey] || [];
+    if (added.length === 0) return;
+    const counts = {};
+    added.forEach(e => { counts[e.type] = (counts[e.type]||0) + 1; });
+
+    const rows = [];
+    let roomTotal = 0;
+    Object.entries(counts).forEach(([type, qty]) => {
+      const mat = MATERIALES_2D[type];
+      if (!mat) return;
+      let lineTotal = mat.precio * qty;
+      rows.push({ name: mat.nombre, qty, total: lineTotal });
+      roomTotal += lineTotal;
+      if (mat.extra) {
+        const cableM = mat.extra.metrosPorBoca * qty;
+        const cableCost = cableM * mat.extra.precioCable;
+        rows.push({ name: `Cable ${mat.extra.cable}`, qty: cableM, total: cableCost });
+        roomTotal += cableCost;
+        const cajaCost = mat.extra.precioCaja * qty;
+        rows.push({ name: `Caja ${mat.extra.caja}`, qty, total: cajaCost });
+        roomTotal += cajaCost;
+        const caneriaM = mat.extra.caneria * qty;
+        const caneriaCost = caneriaM * mat.extra.precioCaneria;
+        rows.push({ name: `Cañería corrugada`, qty: caneriaM, total: caneriaCost });
+        roomTotal += caneriaCost;
+      }
+    });
+    sections.push({ roomName: ROOM_META[roomKey].name, rows, roomTotal });
+    grandTotal += roomTotal;
+  });
+
+  return { sections, grandTotal };
+}
+
+function refreshBudget2d() {
+  const { sections, grandTotal } = calcBudget2d();
+  const content = document.getElementById('budgetContent2d');
+
+  if (sections.length === 0) {
+    content.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">
+      Todavía no agregaste elementos nuevos.<br><br>
+      Activá <strong style="color:#A855F7">✏️ Editar plano</strong>, hacé clic dentro de un ambiente y elegí qué agregar.<br><br>
+      <span style="color:var(--green)">🔗 Los cambios se ven también en el recorrido 3D.</span>
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  sections.forEach(sec => {
+    html += `<div class="budget-section-2d"><div class="budget-section-title-2d">${sec.roomName}</div>`;
+    sec.rows.forEach(r => {
+      html += `<div class="budget-row-2d">
+        <span class="qty">${r.qty}</span>
+        <span class="name">${r.name}</span>
+        <span class="sub">$${r.total.toLocaleString('es-AR')}</span>
+      </div>`;
+    });
+    html += `<div class="budget-row-2d" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px;font-weight:700">
+      <span class="name">Subtotal</span>
+      <span class="sub" style="color:var(--accent)">$${sec.roomTotal.toLocaleString('es-AR')}</span>
+    </div></div>`;
+  });
+
+  html += `<div class="budget-total-2d">
+    <span class="budget-total-lbl-2d">TOTAL AGREGADO</span>
+    <span class="budget-total-val-2d">$${grandTotal.toLocaleString('es-AR')}</span>
+  </div>
+  <div style="font-size:9px;color:var(--muted);margin-top:4px;text-align:right">Sin mano de obra ni IVA</div>
+  <div class="budget-reset-2d" onclick="resetAdded2d()">🗑️ Quitar todos los elementos agregados</div>`;
+
+  content.innerHTML = html;
+}
+
+function resetAdded2d() {
+  if (!confirm('¿Quitar todos los elementos agregados (2D y 3D)? Esta acción no se puede deshacer.')) return;
+  localStorage.removeItem(STORAGE_KEY_2D);
+  renderAddedElements2d();
+  refreshBudget2d();
+}
+
+// ── Wire up room zone clicks ──
+document.querySelectorAll('.room-zone').forEach(zone => {
+  zone.addEventListener('click', (ev) => {
+    if (!editMode2d) return;
+    const svg = document.getElementById('planoSvg');
+    const pt = svg.createSVGPoint();
+    const rect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    // convert click to SVG coordinates
+    const xRatio = (ev.clientX - rect.left) / rect.width;
+    const yRatio = (ev.clientY - rect.top) / rect.height;
+    const svgX = viewBox.x + xRatio * viewBox.width;
+    const svgY = viewBox.y + yRatio * viewBox.height;
+    openPlaceMenu2d(zone.dataset.room, svgX - 10, svgY - 10); // center the 20x20 symbol on click point
+  });
+});
+
+// Initial render of any previously-added elements (persisted / synced from 3D)
+renderAddedElements2d();
 </script>
 </body>
 </html>
