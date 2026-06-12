@@ -377,6 +377,24 @@ const AEA_LIMITS = { luz: 8, toma: 6 }; // máx bocas de luz / tomas por circuit
 // localStorage key
 const STORAGE_KEY = 'electrocad_pb_2unidades_v1';
 
+// SVG bounding boxes per room (matches the 2D plano's #roomZones) — for cross-sync pos2d
+const ROOM_SVG_BOUNDS = {
+  ec1:   { x:67,  y:57,  w:283, h:273, mw:7.25, md:6.10 },
+  coc2:  { x:470, y:45,  w:233, h:145, mw:3.35, md:2.75 },
+  toil1: { x:360, y:190, w:100, h:140, mw:1.70, md:1.50 },
+  ec3:   { x:67,  y:344, w:283, h:279, mw:6.75, md:5.60 },
+  coc4:  { x:470, y:385, w:233, h:238, mw:3.35, md:2.75 },
+  toil2: { x:360, y:490, w:100, h:143, mw:1.80, md:0.90 },
+};
+// Convert a 3D world position [x,_,z] in a room to SVG pixel coords for the 2D plano
+function worldToSvg2d(roomKey, x, z) {
+  const b = ROOM_SVG_BOUNDS[roomKey];
+  if (!b) return [0,0];
+  const nx = (x / b.mw) + 0.5;
+  const nz = (z / b.md) + 0.5;
+  return [ Math.round(b.x + nx*b.w - 10), Math.round(b.y + nz*b.h - 10) ];
+}
+
 // ── PERSISTENCE ──
 function saveState() {
   try {
@@ -976,12 +994,14 @@ function placeElement(surface, type) {
   }
 
   const id = genId(roomKey, type==='luz'?'L':type==='interruptor'?'S':'T');
+  const pos2d = worldToSvg2d(roomKey, pos[0], pos[2]);
 
   const newEl = {
     type, id,
     circuit: circuitInfo.circuit,
     termica,
     pos,
+    pos2d,
     power: type==='luz' ? 60 : (type==='toma-esp' ? 1500 : 0),
     on: type==='luz' ? true : undefined,
     wall,
