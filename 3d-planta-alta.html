@@ -102,6 +102,69 @@ canvas{display:block;outline:none}
   background:rgba(22,27,34,.85);border:1px solid var(--border);border-radius:8px;
   backdrop-filter:blur(8px);z-index:45;overflow:hidden}
 .minimap-title{position:absolute;top:4px;left:6px;font-size:8px;color:var(--muted);letter-spacing:1px;z-index:1}
+
+/* ═══ EDIT MODE ═══ */
+.btn.edit-on{border-color:#A855F7;color:#A855F7;background:rgba(168,85,247,.15)}
+.crosshair.edit-mode::before,.crosshair.edit-mode::after{background:#A855F7}
+.crosshair.edit-mode.hover::before,.crosshair.edit-mode.hover::after{background:#A855F7;box-shadow:0 0 8px #A855F7}
+
+/* placement menu */
+.place-menu{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:rgba(22,27,34,.97);border:1px solid #A855F7;border-radius:12px;
+  padding:16px;z-index:80;backdrop-filter:blur(10px);min-width:240px;
+  box-shadow:0 8px 40px rgba(0,0,0,.5);display:none}
+.place-menu.show{display:block}
+.place-title{font-size:11px;font-weight:700;letter-spacing:2px;color:#A855F7;
+  text-transform:uppercase;margin-bottom:12px;text-align:center}
+.place-opt{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+  border:1px solid var(--border);background:rgba(255,255,255,.02);margin-bottom:6px;
+  cursor:pointer;transition:all .15s;font-size:13px;font-weight:600}
+.place-opt:hover, .place-opt:active{border-color:#A855F7;background:rgba(168,85,247,.1)}
+.place-opt .ico{font-size:18px;width:24px;text-align:center}
+.place-opt .meta{flex:1}
+.place-opt .price{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted)}
+.place-cancel{margin-top:8px;text-align:center;padding:8px;border-radius:8px;
+  border:1px solid var(--border);font-size:12px;color:var(--muted);cursor:pointer;font-weight:700}
+
+/* AEA warning toast */
+.aea-toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:rgba(234,179,8,.15);border:1px solid var(--yellow);border-radius:8px;
+  padding:10px 18px;font-size:12px;font-weight:700;color:var(--yellow);
+  z-index:70;opacity:0;transition:all .3s;pointer-events:none;text-align:center;max-width:90vw}
+.aea-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.aea-toast.ok{border-color:var(--green);background:rgba(34,197,94,.15);color:var(--green)}
+
+/* budget panel */
+.budget-panel{position:fixed;top:60px;right:14px;width:250px;max-height:70vh;overflow-y:auto;
+  background:rgba(22,27,34,.94);border:1px solid var(--border);border-radius:10px;
+  padding:14px;z-index:46;backdrop-filter:blur(10px);transition:transform .25s, opacity .25s}
+.budget-panel.hidden{transform:translateX(280px);opacity:0;pointer-events:none}
+.budget-title{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);
+  text-transform:uppercase;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.budget-close{cursor:pointer;color:var(--muted);font-size:14px}
+.budget-section{margin-bottom:10px}
+.budget-section-title{font-size:9px;color:#A855F7;letter-spacing:1px;font-weight:700;margin-bottom:6px;
+  border-bottom:1px solid rgba(168,85,247,.2);padding-bottom:3px}
+.budget-row{display:flex;justify-content:space-between;padding:4px 0;font-size:11px}
+.budget-row .qty{font-family:'JetBrains Mono',monospace;color:var(--accent);font-weight:700;min-width:24px;text-align:right}
+.budget-row .name{flex:1;padding:0 6px;color:var(--text)}
+.budget-row .sub{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:10px}
+.budget-total{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0 4px;border-top:1px solid var(--border);margin-top:8px}
+.budget-total-lbl{font-size:12px;font-weight:700}
+.budget-total-val{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
+.budget-added-badge{display:inline-block;background:rgba(168,85,247,.2);color:#A855F7;
+  font-size:8px;padding:1px 5px;border-radius:3px;margin-left:4px;font-weight:700}
+.budget-reset{margin-top:10px;text-align:center;padding:7px;border-radius:6px;
+  border:1px solid var(--border);font-size:10px;color:var(--muted);cursor:pointer}
+.budget-reset:active{border-color:var(--red);color:var(--red)}
+
+/* ghost preview element */
+.ghost-hint{position:fixed;bottom:160px;left:50%;transform:translateX(-50%);
+  background:rgba(168,85,247,.15);border:1px solid #A855F7;border-radius:8px;
+  padding:8px 16px;font-size:12px;color:#A855F7;font-weight:700;z-index:55;
+  display:none;text-align:center;backdrop-filter:blur(8px)}
+.ghost-hint.show{display:block}
 </style>
 </head>
 <body>
@@ -148,6 +211,28 @@ canvas{display:block;outline:none}
   📱 En celular: arrastrá con el dedo y usá los botones de abajo
 </div>
 
+<!-- AEA TOAST -->
+<div class="aea-toast" id="aeaToast"></div>
+
+<!-- GHOST HINT (edit mode active) -->
+<div class="ghost-hint" id="ghostHint">📍 Modo edición — apuntá a una pared o techo y tocá para agregar</div>
+
+<!-- PLACEMENT MENU -->
+<div class="place-menu" id="placeMenu">
+  <div class="place-title">Agregar elemento</div>
+  <div id="placeOptions"></div>
+  <div class="place-cancel" onclick="closePlaceMenu()">Cancelar</div>
+</div>
+
+<!-- BUDGET PANEL -->
+<div class="budget-panel hidden" id="budgetPanel">
+  <div class="budget-title">
+    <span>💰 Cómputo y presupuesto</span>
+    <span class="budget-close" onclick="toggleBudget()">✕</span>
+  </div>
+  <div id="budgetContent"></div>
+</div>
+
 <div class="ctrl-bar">
   <div class="room-tabs" id="roomTabs"></div>
   <div class="ctrl-row">
@@ -156,6 +241,12 @@ canvas{display:block;outline:none}
     </button>
     <button class="btn" id="circuitsBtn" onclick="toggleCircuitView()">
       <span class="btn-icon">🔌</span> Ver circuitos
+    </button>
+    <button class="btn" id="editBtn" onclick="toggleEditMode()">
+      <span class="btn-icon">✏️</span> Editar instalación
+    </button>
+    <button class="btn" id="budgetBtn" onclick="toggleBudget()">
+      <span class="btn-icon">💰</span> Presupuesto
     </button>
     <button class="btn" onclick="resetView()">
       <span class="btn-icon">↺</span> Centrar vista
@@ -191,6 +282,11 @@ let raycaster, mouse;
 let currentRoom = 'd5';
 let hoveredObject = null;
 let allLightsOn = true;
+let editMode = false;
+let hoveredSurface = null; // {wall: 'left'|'right'|'back'|'front'|'ceiling', point: Vector3}
+let wallMeshes = [];
+let nextIds = {}; // per-room counter for generating new element IDs
+let budgetOpen = false;
 
 // ── ROOMS — medidas reales del plano (m) ──
 const ROOMS = {
@@ -269,8 +365,52 @@ const ROOMS = {
   }
 };
 
-// ═══ INIT ═══
+// ── MATERIALES (precios ARS) — usados para cómputo automático ──
+const MATERIALES = {
+  toma:        { nombre:'Tomacorriente doble 2P+T', precio:2800, unidad:'u', extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  'toma-gf':   { nombre:'Tomacorriente GFCI (baño)', precio:5500, unidad:'u', extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  'toma-esp':  { nombre:'Tomacorriente especial (cocina)', precio:4200, unidad:'u', extra:{cable:'2.5mm²', metrosPorBoca:4, precioCable:850, caja:'rectangular', precioCaja:420, caneria:3, precioCaneria:380} },
+  luz:         { nombre:'Boca de luz c/portalámparas', precio:1200, unidad:'u', extra:{cable:'1.5mm²', metrosPorBoca:3, precioCable:620, caja:'octogonal', precioCaja:380, caneria:2.5, precioCaneria:380} },
+  interruptor: { nombre:'Interruptor simple 10A', precio:1800, unidad:'u', extra:{cable:'1.5mm²', metrosPorBoca:2, precioCable:620, caja:'rectangular', precioCaja:420, caneria:2, precioCaneria:380} },
+  tablero:     { nombre:'Tablero adicional 6 módulos', precio:9800, unidad:'u', extra:null },
+  dif:         { nombre:'Diferencial 25A/30mA', precio:12000, unidad:'u', extra:null },
+};
+
+// AEA 90364 — límites por circuito
+const AEA_LIMITS = { luz: 8, toma: 6 }; // máx bocas de luz / tomas por circuito
+
+// localStorage key
+const STORAGE_KEY = 'electrocad_planta_alta_v1';
+
+// ── PERSISTENCE ──
+function saveState() {
+  try {
+    const data = {};
+    Object.keys(ROOMS).forEach(k => {
+      data[k] = ROOMS[k].elements.filter(e => e.userAdded).map(e => ({...e}));
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) { console.warn('No se pudo guardar', e); }
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    Object.keys(data).forEach(roomKey => {
+      if (!ROOMS[roomKey]) return;
+      data[roomKey].forEach(el => {
+        if (!ROOMS[roomKey].elements.find(e => e.id === el.id)) {
+          ROOMS[roomKey].elements.push(el);
+        }
+      });
+    });
+  } catch(e) { console.warn('No se pudo cargar estado guardado', e); }
+}
+
 function init() {
+  loadState();
+
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x1a1a22);
   scene.fog = new THREE.Fog(0x1a1a22, 8, 18);
@@ -299,7 +439,7 @@ function init() {
 
 function buildRoom(roomKey) {
   while(scene.children.length > 0) scene.remove(scene.children[0]);
-  interactables = []; lights = {}; lightBulbs = {};
+  interactables = []; lights = {}; lightBulbs = {}; wallMeshes = [];
 
   const room = ROOMS[roomKey];
   const { w, d, h } = room.size;
@@ -322,20 +462,26 @@ function buildRoom(roomKey) {
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 }));
   ceiling.rotation.x = Math.PI/2; ceiling.position.y = h;
   scene.add(ceiling);
+  ceiling.userData.wallId = 'ceiling';
+  wallMeshes.push(ceiling);
 
   const wallMat = new THREE.MeshStandardMaterial({ color: room.wallColor, roughness: 0.9 });
 
   const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
   back.position.set(0, h/2, -d/2); back.receiveShadow = true; scene.add(back);
+  back.userData.wallId = 'back'; wallMeshes.push(back);
 
   const front = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat.clone());
   front.position.set(0, h/2, d/2); front.rotation.y = Math.PI; scene.add(front);
+  front.userData.wallId = 'front'; wallMeshes.push(front);
 
   const left = new THREE.Mesh(new THREE.PlaneGeometry(d, h), wallMat.clone());
   left.position.set(-w/2, h/2, 0); left.rotation.y = Math.PI/2; left.receiveShadow = true; scene.add(left);
+  left.userData.wallId = 'left'; wallMeshes.push(left);
 
   const right = new THREE.Mesh(new THREE.PlaneGeometry(d, h), wallMat.clone());
   right.position.set(w/2, h/2, 0); right.rotation.y = -Math.PI/2; right.receiveShadow = true; scene.add(right);
+  right.userData.wallId = 'right'; wallMeshes.push(right);
 
   // baseboards
   const baseGeo = new THREE.BoxGeometry(w-0.02, 0.08, 0.03);
@@ -385,8 +531,8 @@ function buildElement(el, room) {
 
     group.userData.clickable = true;
 
-  } else if (el.type === 'toma' || el.type === 'toma-gf') {
-    const color = el.type==='toma-gf' ? 0xA855F7 : 0x2B8FE8;
+  } else if (el.type === 'toma' || el.type === 'toma-gf' || el.type === 'toma-esp') {
+    const color = el.type==='toma-gf' ? 0xA855F7 : el.type==='toma-esp' ? 0x06B6D4 : 0x2B8FE8;
     const plate = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.20,0.02), new THREE.MeshStandardMaterial({ color:0xf5f5f0, roughness:0.4 }));
     orientToWall(plate, el.wall); group.add(plate);
 
@@ -478,11 +624,16 @@ function switchRoom(key) {
   currentRoom = key; yaw = 0; pitch = 0;
   buildRoom(key); buildRoomTabs();
   document.getElementById('infoPanel').classList.add('hidden');
+  closePlaceMenu();
+  refreshBudgetIfOpen();
 }
 
 function setupControls() {
   const canvas = renderer.domElement;
-  canvas.addEventListener('pointerdown', e => { isDragging = true; lastX=e.clientX; lastY=e.clientY; });
+  canvas.addEventListener('pointerdown', e => {
+    if (document.getElementById('placeMenu').classList.contains('show')) return;
+    isDragging = true; lastX=e.clientX; lastY=e.clientY;
+  });
   window.addEventListener('pointermove', e => {
     mouse.x = (e.clientX/window.innerWidth)*2-1;
     mouse.y = -(e.clientY/window.innerHeight)*2+1;
@@ -498,6 +649,7 @@ function setupControls() {
   let downPos = {x:0,y:0};
   canvas.addEventListener('pointerdown', e => { downPos = {x:e.clientX,y:e.clientY}; });
   canvas.addEventListener('pointerup', e => {
+    if (document.getElementById('placeMenu').classList.contains('show')) return;
     if (Math.hypot(e.clientX-downPos.x, e.clientY-downPos.y) < 6) handleClick();
   });
 
@@ -538,6 +690,42 @@ function setupControls() {
 
 function checkHover() {
   raycaster.setFromCamera(mouse, camera);
+
+  if (editMode) {
+    // In edit mode, first check if hovering a user-added element (to allow deletion)
+    const elTargets = [];
+    interactables.forEach(g => { if (g.userData.userAdded) g.traverse(o => { if(o.isMesh){ o.userData.__group=g; elTargets.push(o); } }); });
+    const elHits = raycaster.intersectObjects(elTargets);
+    const crosshair = document.getElementById('crosshair');
+    const tooltip = document.getElementById('tooltip');
+
+    if (elHits.length > 0 && elHits[0].distance < 2.2) {
+      hoveredObject = elHits[0].object.userData.__group;
+      hoveredSurface = null;
+      crosshair.classList.add('hover'); tooltip.classList.add('show');
+      document.getElementById('tooltipText').textContent = '🗑️ ' + labelFor(hoveredObject.userData);
+      document.getElementById('tooltipSub').textContent = 'Elemento agregado · Tocá para eliminarlo';
+      return;
+    }
+    hoveredObject = null;
+
+    // Otherwise, look for wall/ceiling surfaces for placement
+    const wallHits = raycaster.intersectObjects(wallMeshes);
+    if (wallHits.length > 0 && wallHits[0].distance < 3.5) {
+      hoveredSurface = { wallId: wallHits[0].object.userData.wallId, point: wallHits[0].point.clone(), normal: wallHits[0].face.normal.clone() };
+      crosshair.classList.add('hover');
+      tooltip.classList.add('show');
+      const names = { left:'Pared izquierda', right:'Pared derecha', back:'Pared del fondo', front:'Pared frontal', ceiling:'Techo' };
+      document.getElementById('tooltipText').textContent = '➕ ' + (names[hoveredSurface.wallId]||'Superficie');
+      document.getElementById('tooltipSub').textContent = 'Tocá para agregar elemento aquí';
+    } else {
+      hoveredSurface = null;
+      crosshair.classList.remove('hover'); tooltip.classList.remove('show');
+    }
+    return;
+  }
+
+  hoveredSurface = null;
   const targets = [];
   interactables.forEach(g => g.traverse(o => { if(o.isMesh){ o.userData.__group=g; targets.push(o); } }));
   const hits = raycaster.intersectObjects(targets);
@@ -557,19 +745,28 @@ function checkHover() {
 
 function labelFor(d) {
   const names = {
-    luz: '💡 Boca de luz', toma: '⬡ Tomacorriente', 'toma-gf': '⬡ Toma GFCI (baño)',
+    luz: '💡 Boca de luz', toma: '⬡ Tomacorriente', 'toma-gf': '⬡ Toma GFCI (baño)', 'toma-esp':'⬡ Toma especial',
     interruptor: '⧉ Interruptor', tablero: '▣ Tablero eléctrico', dif: '🛡️ Diferencial'
   };
   return names[d.type] || d.type;
 }
 function subLabelFor(d) {
-  if (d.type==='interruptor') return `Circuito ${d.circuit} · ${d.termica} · Clic para encender/apagar`;
-  if (d.type==='luz') return `Circuito ${d.circuit} · ${d.termica} · ${d.on?'Encendida':'Apagada'}`;
+  const tag = d.userAdded ? ' · 🆕 agregado' : '';
+  if (d.type==='interruptor') return `Circuito ${d.circuit} · ${d.termica} · Clic para encender/apagar${tag}`;
+  if (d.type==='luz') return `Circuito ${d.circuit} · ${d.termica} · ${d.on?'Encendida':'Apagada'}${tag}`;
   if (d.type==='tablero') return 'Tablero principal — clic para detalle';
-  return `Circuito ${d.circuit} · ${d.termica}`;
+  return `Circuito ${d.circuit} · ${d.termica}${tag}`;
 }
 
 function handleClick() {
+  if (editMode) {
+    if (hoveredObject && hoveredObject.userData.userAdded) {
+      deleteElement(hoveredObject.userData);
+      return;
+    }
+    if (hoveredSurface) openPlaceMenu(hoveredSurface);
+    return;
+  }
   if (!hoveredObject) return;
   const d = hoveredObject.userData;
   if (d.type === 'interruptor') {
@@ -611,12 +808,17 @@ function showInfo(d) {
 }
 
 function updateConsumo() {
-  let total = 0, count = 0;
+  let total = 0, count = 0, installed = 0, lightCount = 0;
   ROOMS[currentRoom].elements.forEach(el => {
-    if (el.type==='luz' && el.on) { total += (el.power||0); count++; }
+    if (el.type==='luz') {
+      lightCount++;
+      installed += (el.power||0);
+      if (el.on) { total += (el.power||0); count++; }
+    }
+    if (el.type==='toma-esp') installed += (el.power||0);
   });
   document.getElementById('consumoVal').textContent = total + ' W';
-  document.getElementById('consumoSub').textContent = count + ' luz' + (count===1?'':'es') + ' encendida' + (count===1?'':'s');
+  document.getElementById('consumoSub').textContent = count + '/' + lightCount + ' luces · instalado ' + installed + ' W';
 }
 
 function toggleAllLights() {
@@ -651,6 +853,296 @@ function toggleCircuitView() {
 
 function resetView() { yaw=0; pitch=0; camera.position.set(0, Math.min(1.6, ROOMS[currentRoom].size.h*0.6), 0); }
 function toggleInfo() { document.getElementById('infoPanel').classList.toggle('hidden'); }
+
+// ═══════════════════════════════════════════════════════════
+// EDITOR EN VIVO — agregar elementos, validación AEA, presupuesto
+// ═══════════════════════════════════════════════════════════
+
+function toggleEditMode() {
+  editMode = !editMode;
+  document.getElementById('editBtn').classList.toggle('edit-on', editMode);
+  document.getElementById('crosshair').classList.toggle('edit-mode', editMode);
+  document.getElementById('ghostHint').classList.toggle('show', editMode);
+  if (!editMode) closePlaceMenu();
+}
+
+// Generates a unique element id for a room, e.g. T4, L2, S2
+function genId(roomKey, prefix) {
+  const room = ROOMS[roomKey];
+  let n = 1;
+  const existing = room.elements.map(e => e.id);
+  while (existing.includes(prefix + n)) n++;
+  return prefix + n;
+}
+
+// Determine which circuit a new element of given type should join.
+// Strategy: find existing circuit of same type in the room with capacity left;
+// otherwise propose a "new circuit" suffix (-B) for AEA compliance.
+function pickCircuitForType(roomKey, type) {
+  const room = ROOMS[roomKey];
+  const limit = type === 'luz' ? AEA_LIMITS.luz : AEA_LIMITS.toma;
+  const isTomaType = (type !== 'luz' && type !== 'interruptor');
+  // group existing elements by circuit for this "family" (luz-like vs toma-like)
+  const familyTypes = type === 'luz' || type === 'interruptor' ? ['luz','interruptor'] : ['toma','toma-gf','toma-esp'];
+  const counts = {};
+  room.elements.forEach(e => {
+    if (familyTypes.includes(e.type)) {
+      counts[e.circuit] = (counts[e.circuit]||0) + (e.type==='interruptor' ? 0 : 1); // interruptores no cuentan para el límite de bocas
+    }
+  });
+  // find a circuit with room
+  let chosen = null, exceeded = false;
+  const circEntries = Object.entries(counts);
+  if (circEntries.length === 0) {
+    // No elements of this family yet in the room — assign to the room's primary circuit if any element exists
+    const anyCircuit = room.elements.find(e => e.circuit && !e.circuit.includes(','))?.circuit;
+    chosen = anyCircuit || 'C-NUEVO';
+  } else {
+    for (const [circ, cnt] of circEntries) {
+      if (cnt < limit) { chosen = circ; break; }
+    }
+    if (!chosen) {
+      const base = circEntries[0][0];
+      chosen = base + '-B';
+      exceeded = true;
+    }
+  }
+  return { circuit: chosen, exceeded, limit };
+}
+
+// Open the placement menu with options depending on surface
+function openPlaceMenu(surface) {
+  const menu = document.getElementById('placeMenu');
+  const opts = document.getElementById('placeOptions');
+  opts.innerHTML = '';
+
+  const isCeiling = surface.wallId === 'ceiling';
+
+  const options = isCeiling
+    ? [ { type:'luz', label:'Boca de luz (techo)', icon:'💡' } ]
+    : [
+        { type:'toma', label:'Tomacorriente', icon:'⬡' },
+        { type:'toma-gf', label:'Tomacorriente GFCI (baño)', icon:'⬡' },
+        { type:'toma-esp', label:'Toma especial (cocina/AC)', icon:'⬡' },
+        { type:'interruptor', label:'Interruptor', icon:'⧉' },
+        { type:'luz', label:'Aplique de pared (luz)', icon:'💡' },
+      ];
+
+  options.forEach(opt => {
+    const mat = MATERIALES[opt.type];
+    const div = document.createElement('div');
+    div.className = 'place-opt';
+    div.innerHTML = `<span class="ico">${opt.icon}</span>
+      <span class="meta">${opt.label}<div class="price">+ARS ${mat.precio.toLocaleString('es-AR')} (material)${mat.extra?` · +${mat.extra.metrosPorBoca}m ${mat.extra.cable}`:''}</div></span>`;
+    div.onclick = () => placeElement(surface, opt.type);
+    opts.appendChild(div);
+  });
+
+  menu.classList.add('show');
+}
+function closePlaceMenu() {
+  document.getElementById('placeMenu').classList.remove('show');
+}
+
+// Create a new element on the given surface and add it to ROOMS data + scene
+function placeElement(surface, type) {
+  closePlaceMenu();
+  const roomKey = currentRoom;
+  const room = ROOMS[roomKey];
+  const { w, d, h } = room.size;
+
+  // figure local position relative to room center based on world hit point
+  let pos, wall;
+  const p = surface.point;
+
+  if (surface.wallId === 'ceiling') {
+    pos = [ clampRange(p.x, -w/2+0.3, w/2-0.3), h, clampRange(p.z, -d/2+0.3, d/2-0.3) ];
+    wall = undefined;
+  } else {
+    wall = surface.wallId;
+    // height: tomas/gf/esp -> 0.5m, interruptor -> 1.1m, luz aplique -> 1.8m
+    let yPos = type === 'interruptor' ? 1.1 : (type === 'luz' ? 1.8 : 0.5);
+    if (wall === 'left' || wall === 'right') {
+      pos = [ wall==='left' ? -w/2+0.05 : w/2-0.05, yPos, clampRange(p.z, -d/2+0.2, d/2-0.2) ];
+    } else { // back/front
+      pos = [ clampRange(p.x, -w/2+0.2, w/2-0.2), yPos, wall==='back' ? -d/2+0.05 : d/2-0.05 ];
+    }
+  }
+
+  // determine circuit
+  let circuitInfo = { circuit: 'C-NUEVO', exceeded:false, limit:0 };
+  let termica = '20A';
+  if (type === 'luz' || type === 'interruptor') {
+    circuitInfo = pickCircuitForType(roomKey, 'luz');
+    termica = '10A';
+  } else {
+    circuitInfo = pickCircuitForType(roomKey, type);
+    termica = type === 'toma-gf' ? '16A' : '20A';
+  }
+
+  const id = genId(roomKey, type==='luz'?'L':type==='interruptor'?'S':'T');
+
+  const newEl = {
+    type, id,
+    circuit: circuitInfo.circuit,
+    termica,
+    pos,
+    power: type==='luz' ? 60 : (type==='toma-esp' ? 1500 : 0),
+    on: type==='luz' ? true : undefined,
+    wall,
+    userAdded: true,
+  };
+  if (type === 'interruptor') {
+    // try to link to nearest light in room (first light found)
+    const firstLight = room.elements.find(e => e.type === 'luz');
+    newEl.linkLight = firstLight ? firstLight.id : '';
+  }
+
+  room.elements.push(newEl);
+  buildElement(newEl, room);
+  saveState();
+  updateConsumo();
+  refreshBudgetIfOpen();
+
+  // AEA toast feedback
+  if (circuitInfo.exceeded) {
+    showAeaToast(`⚠ AEA 90364: el circuito alcanzó el límite de ${circuitInfo.limit===AEA_LIMITS.luz?'8 bocas de luz':'6 tomas'}. Se asignó un nuevo circuito sugerido: ${circuitInfo.circuit}. Verificar con el tablero.`, false);
+  } else {
+    showAeaToast(`✓ Elemento agregado al circuito ${circuitInfo.circuit} — dentro de los límites AEA 90364.`, true);
+  }
+}
+
+function clampRange(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function deleteElement(d) {
+  const room = ROOMS[currentRoom];
+  room.elements = room.elements.filter(e => e.id !== d.id);
+  buildRoom(currentRoom);
+  saveState();
+  updateConsumo();
+  refreshBudgetIfOpen();
+  showAeaToast(`🗑️ Elemento ${d.id} eliminado del ${room.name}. Cómputo actualizado.`, true);
+}
+
+let aeaToastTimer;
+function showAeaToast(msg, ok) {
+  const el = document.getElementById('aeaToast');
+  el.textContent = msg;
+  el.classList.toggle('ok', ok);
+  el.classList.add('show');
+  clearTimeout(aeaToastTimer);
+  aeaToastTimer = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
+// ── PRESUPUESTO / CÓMPUTO ──
+function calcBudget() {
+  // sections: base (original) and added (userAdded) per room, plus grand total
+  const sections = [];
+  let grandTotal = 0;
+
+  Object.keys(ROOMS).forEach(roomKey => {
+    const room = ROOMS[roomKey];
+    const added = room.elements.filter(e => e.userAdded);
+    if (added.length === 0) return;
+
+    const counts = {};
+    added.forEach(e => {
+      counts[e.type] = (counts[e.type]||0) + 1;
+    });
+
+    const rows = [];
+    let roomTotal = 0;
+    Object.entries(counts).forEach(([type, qty]) => {
+      const mat = MATERIALES[type];
+      if (!mat) return;
+      let lineTotal = mat.precio * qty;
+      let sub = `${qty} × $${mat.precio.toLocaleString('es-AR')}`;
+      rows.push({ name: mat.nombre, qty, sub, total: lineTotal });
+      roomTotal += lineTotal;
+
+      // extra materials (cable, caja, cañería)
+      if (mat.extra) {
+        const cableM = mat.extra.metrosPorBoca * qty;
+        const cableCost = cableM * mat.extra.precioCable;
+        rows.push({ name: `Cable ${mat.extra.cable}`, qty: cableM, sub:`${cableM}m × $${mat.extra.precioCable}`, total: cableCost, isExtra:true });
+        roomTotal += cableCost;
+
+        const cajaCost = mat.extra.precioCaja * qty;
+        rows.push({ name: `Caja ${mat.extra.caja}`, qty, sub:`${qty} × $${mat.extra.precioCaja}`, total: cajaCost, isExtra:true });
+        roomTotal += cajaCost;
+
+        const caneriaM = mat.extra.caneria * qty;
+        const caneriaCost = caneriaM * mat.extra.precioCaneria;
+        rows.push({ name: `Cañería corrugada`, qty: caneriaM, sub:`${caneriaM}m × $${mat.extra.precioCaneria}`, total: caneriaCost, isExtra:true });
+        roomTotal += caneriaCost;
+      }
+    });
+
+    sections.push({ roomName: room.name, rows, roomTotal });
+    grandTotal += roomTotal;
+  });
+
+  return { sections, grandTotal };
+}
+
+function toggleBudget() {
+  budgetOpen = !budgetOpen;
+  document.getElementById('budgetPanel').classList.toggle('hidden', !budgetOpen);
+  document.getElementById('budgetBtn').classList.toggle('on', budgetOpen);
+  if (budgetOpen) refreshBudget();
+}
+function refreshBudgetIfOpen() { if (budgetOpen) refreshBudget(); }
+
+function refreshBudget() {
+  const { sections, grandTotal } = calcBudget();
+  const content = document.getElementById('budgetContent');
+
+  if (sections.length === 0) {
+    content.innerHTML = `<div style="font-size:11px;color:var(--muted);text-align:center;padding:20px 0">
+      Todavía no agregaste elementos nuevos.<br><br>
+      Activá <strong style="color:#A855F7">✏️ Editar instalación</strong>, apuntá a una pared o techo y tocá para agregar tomas, luces o interruptores.
+    </div>`;
+    return;
+  }
+
+  let html = '';
+  sections.forEach(sec => {
+    html += `<div class="budget-section">
+      <div class="budget-section-title">${sec.roomName}</div>`;
+    sec.rows.forEach(r => {
+      html += `<div class="budget-row">
+        <span class="qty">${r.qty}</span>
+        <span class="name">${r.name}</span>
+        <span class="sub">$${r.total.toLocaleString('es-AR')}</span>
+      </div>`;
+    });
+    html += `<div class="budget-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px;font-weight:700">
+      <span class="name">Subtotal</span>
+      <span class="sub" style="color:var(--accent)">$${sec.roomTotal.toLocaleString('es-AR')}</span>
+    </div></div>`;
+  });
+
+  html += `<div class="budget-total">
+    <span class="budget-total-lbl">TOTAL AGREGADO <span class="budget-added-badge">NUEVO</span></span>
+    <span class="budget-total-val">$${grandTotal.toLocaleString('es-AR')}</span>
+  </div>
+  <div style="font-size:9px;color:var(--muted);margin-top:4px;text-align:right">Sin mano de obra ni IVA</div>
+  <div class="budget-reset" onclick="resetAddedElements()">🗑️ Quitar todos los elementos agregados</div>`;
+
+  content.innerHTML = html;
+}
+
+function resetAddedElements() {
+  if (!confirm('¿Quitar todos los elementos agregados en todos los ambientes? Esta acción no se puede deshacer.')) return;
+  Object.keys(ROOMS).forEach(roomKey => {
+    ROOMS[roomKey].elements = ROOMS[roomKey].elements.filter(e => !e.userAdded);
+  });
+  saveState();
+  buildRoom(currentRoom);
+  refreshBudget();
+  updateConsumo();
+}
+
 
 function animate() {
   requestAnimationFrame(animate);
