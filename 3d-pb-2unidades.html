@@ -200,11 +200,11 @@ const ROOMS = {
     elements:[
       {type:'luz',id:'L1',circuit:'C3',termica:'10A',pos:[-2.2,2.5,0],on:true,power:60},
       {type:'luz',id:'L2',circuit:'C3',termica:'10A',pos:[2.2,2.5,0],on:true,power:60},
-      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.5,1.2,2],wall:'left',power:0},
-      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.5,1.2,-2],wall:'left',power:0},
-      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.5,1.2,1],wall:'right',power:0},
-      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,1.2,-2.9],wall:'back',power:0},
-      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.5,1.4,2.8],wall:'left',linkLight:'L1,L2'},
+      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.5,0.5,2],wall:'left',power:0},
+      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.5,0.5,-2],wall:'left',power:0},
+      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.5,0.5,1],wall:'right',power:0},
+      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,0.5,-2.9],wall:'back',power:0},
+      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.5,1.1,2.8],wall:'left',linkLight:'L1,L2'},
       {type:'tablero',id:'TAB1',circuit:'IGA U1',termica:'40A',pos:[3.5,1.6,2.6],wall:'right'},
     ]
   },
@@ -213,9 +213,9 @@ const ROOMS = {
     wallColor:0xf0ede5, floorColor:0x8a8580,
     elements:[
       {type:'luz',id:'L1',circuit:'C5',termica:'10A',pos:[0,2.5,0],on:true,power:50},
-      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,1.2,0.8],wall:'left',power:0},
-      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,1.2,-0.8],wall:'right',power:1800},
-      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.4,1.1],wall:'left',linkLight:'L1'},
+      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,0.5,0.8],wall:'left',power:0},
+      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,0.5,-0.8],wall:'right',power:1800},
+      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.1,1.1],wall:'left',linkLight:'L1'},
     ]
   },
   toil1: {
@@ -223,8 +223,8 @@ const ROOMS = {
     wallColor:0xdeeef2, floorColor:0xb8c4c8,
     elements:[
       {type:'luz',id:'L1',circuit:'C1',termica:'10A',pos:[0,2.3,0],on:true,power:40},
-      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.75,1.2,0.4],wall:'right',power:0},
-      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.75,1.5,0.5],wall:'left',linkLight:'L1'},
+      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.75,0.5,0.4],wall:'right',power:0},
+      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.75,1.1,0.5],wall:'left',linkLight:'L1'},
       {type:'dif',id:'DIF1',circuit:'C1,C2',termica:'25A/30mA',pos:[-0.75,1.9,-0.4],wall:'left'},
     ]
   },
@@ -234,11 +234,11 @@ const ROOMS = {
     elements:[
       {type:'luz',id:'L1',circuit:'C3',termica:'10A',pos:[-2,2.5,0],on:true,power:60},
       {type:'luz',id:'L2',circuit:'C3',termica:'10A',pos:[2,2.5,0],on:true,power:60},
-      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.2,1.2,1.8],wall:'left',power:0},
-      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.2,1.2,-1.8],wall:'left',power:0},
-      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.2,1.2,0.5],wall:'right',power:0},
-      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,1.2,-2.6],wall:'back',power:0},
-      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.2,1.4,2.5],wall:'left',linkLight:'L1,L2'},
+      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.2,0.5,1.8],wall:'left',power:0},
+      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.2,0.5,-1.8],wall:'left',power:0},
+      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.2,0.5,0.5],wall:'right',power:0},
+      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,0.5,-2.6],wall:'back',power:0},
+      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.2,1.1,2.5],wall:'left',linkLight:'L1,L2'},
       {type:'tablero',id:'TAB2',circuit:'IGA U2',termica:'40A',pos:[3.2,1.6,2.3],wall:'right'},
     ]
   },
@@ -247,9 +247,9 @@ const ROOMS = {
     wallColor:0xf0ede5, floorColor:0x8a8580,
     elements:[
       {type:'luz',id:'L1',circuit:'C5',termica:'10A',pos:[0,2.5,0],on:true,power:50},
-      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,1.2,0.8],wall:'left',power:0},
-      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,1.2,-0.8],wall:'right',power:1800},
-      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.4,1.1],wall:'left',linkLight:'L1'},
+      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,0.5,0.8],wall:'left',power:0},
+      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,0.5,-0.8],wall:'right',power:1800},
+      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.1,1.1],wall:'left',linkLight:'L1'},
     ]
   },
   toil2: {
@@ -257,8 +257,8 @@ const ROOMS = {
     wallColor:0xdeeef2, floorColor:0xb8c4c8,
     elements:[
       {type:'luz',id:'L1',circuit:'C1',termica:'10A',pos:[0,2.3,0],on:true,power:40},
-      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.8,1.2,0.3],wall:'right',power:0},
-      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.8,1.5,0.3],wall:'left',linkLight:'L1'},
+      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.8,0.5,0.3],wall:'right',power:0},
+      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.8,1.1,0.3],wall:'left',linkLight:'L1'},
       {type:'dif',id:'DIF2',circuit:'C1,C2',termica:'25A/30mA',pos:[-0.8,1.9,-0.25],wall:'left'},
     ]
   }
