@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ElectroCAD PRO — Recorrido 3D · PB 2 Unidades</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+:root{
+  --bg:#0A0C0F;--surface:#111418;--panel:#161B22;--border:#1E2633;
+  --accent:#F5A623;--blue:#2B8FE8;--green:#22C55E;--red:#EF4444;
+  --yellow:#EAB308;--purple:#A855F7;--cyan:#06B6D4;--text:#E2E8F0;--muted:#64748B;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;height:100vh;width:100vw}
+#scene-container{position:fixed;inset:0}
+canvas{display:block;outline:none}
+
+.hdr{position:fixed;top:0;left:0;right:0;z-index:50;
+  background:linear-gradient(180deg,rgba(10,12,15,.9),transparent);
+  padding:14px 16px;display:flex;align-items:center;gap:12px;pointer-events:none}
+.logo{width:34px;height:34px;background:var(--accent);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#000;flex-shrink:0}
+.hdr-t{font-size:14px;font-weight:700;letter-spacing:.5px}
+.hdr-s{font-size:8px;color:var(--muted);font-family:'JetBrains Mono',monospace;letter-spacing:1.5px}
+.room-bdg{margin-left:auto;background:rgba(22,27,34,.85);border:1px solid var(--border);
+  padding:5px 12px;border-radius:6px;font-size:11px;font-weight:700;pointer-events:auto;
+  display:flex;align-items:center;gap:6px;backdrop-filter:blur(8px)}
+.room-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green)}
+.back-btn{background:rgba(22,27,34,.85);border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;font-size:11px;color:var(--text);text-decoration:none;pointer-events:auto;
+  backdrop-filter:blur(8px);font-weight:700}
+
+.crosshair{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:24px;height:24px;pointer-events:none;z-index:40;transition:all .15s}
+.crosshair::before,.crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.6)}
+.crosshair::before{width:2px;height:8px;left:11px;top:8px}
+.crosshair::after{width:8px;height:2px;left:8px;top:11px}
+.crosshair.hover{width:36px;height:36px}
+.crosshair.hover::before,.crosshair.hover::after{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.crosshair.hover::before{width:3px;height:14px;left:16.5px;top:11px}
+.crosshair.hover::after{width:14px;height:3px;left:11px;top:16.5px}
+
+.tooltip{position:fixed;top:calc(50% + 28px);left:50%;transform:translateX(-50%);
+  background:rgba(22,27,34,.92);border:1px solid var(--accent);border-radius:8px;
+  padding:8px 16px;font-size:13px;font-weight:700;color:var(--accent);
+  pointer-events:none;z-index:41;opacity:0;transition:opacity .15s;backdrop-filter:blur(8px);white-space:nowrap}
+.tooltip.show{opacity:1}
+.tooltip .sub{font-size:9px;color:var(--muted);font-weight:400;margin-top:2px;font-family:'JetBrains Mono',monospace}
+
+.ctrl-bar{position:fixed;bottom:0;left:0;right:0;z-index:50;
+  background:linear-gradient(0deg,rgba(10,12,15,.92),transparent);
+  padding:16px;display:flex;flex-direction:column;gap:10px;pointer-events:none}
+.ctrl-row{display:flex;gap:8px;align-items:center;pointer-events:auto;flex-wrap:wrap}
+.btn{padding:9px 16px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(22,27,34,.85);color:var(--text);font-family:'Rajdhani',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;backdrop-filter:blur(8px);
+  display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.btn:active{transform:scale(.96)}
+.btn.on{border-color:var(--accent);color:var(--accent);background:rgba(245,166,35,.12)}
+.btn.green{border-color:var(--green);color:var(--green)}
+.btn-icon{font-size:15px}
+
+.room-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;pointer-events:auto}
+.room-tab{padding:8px 14px;border-radius:8px;border:1px solid var(--border);
+  background:rgba(22,27,34,.85);color:var(--muted);font-size:11px;font-weight:700;
+  cursor:pointer;white-space:nowrap;backdrop-filter:blur(8px);transition:all .15s;flex-shrink:0}
+.room-tab.on{border-color:var(--accent);color:var(--accent);background:rgba(245,166,35,.15)}
+
+.info-panel{position:fixed;top:60px;right:14px;width:230px;
+  background:rgba(22,27,34,.92);border:1px solid var(--border);border-radius:10px;
+  padding:14px;z-index:45;backdrop-filter:blur(8px);transition:transform .25s, opacity .25s}
+.info-panel.hidden{transform:translateX(260px);opacity:0;pointer-events:none}
+.info-title{font-size:9px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:10px}
+.info-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(30,38,51,.5);font-size:11px}
+.info-row:last-child{border:none}
+.info-val{font-family:'JetBrains Mono',monospace;font-weight:700}
+.tag{display:inline-flex;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700}
+.tg{background:rgba(34,197,94,.15);color:var(--green)}
+.tr{background:rgba(239,68,68,.15);color:var(--red)}
+
+.look-hint{position:fixed;bottom:50%;left:50%;transform:translate(-50%,50%);
+  background:rgba(0,0,0,.7);padding:14px 22px;border-radius:10px;
+  font-size:13px;color:var(--text);z-index:60;text-align:center;
+  pointer-events:none;transition:opacity .4s;line-height:1.6}
+.look-hint.hide{opacity:0}
+
+.consumo-badge{position:fixed;top:60px;left:14px;
+  background:rgba(22,27,34,.92);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;z-index:45;backdrop-filter:blur(8px);min-width:120px}
+.consumo-lbl{font-size:8px;color:var(--muted);letter-spacing:1.5px;margin-bottom:4px}
+.consumo-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--accent)}
+.consumo-sub{font-size:9px;color:var(--muted);margin-top:4px;font-family:'JetBrains Mono',monospace}
+
+.loading{position:fixed;inset:0;background:var(--bg);z-index:100;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.loading-icon{font-size:48px;animation:spin 1.5s linear infinite}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:var(--muted);letter-spacing:1px}
+
+.minimap{position:fixed;bottom:120px;right:14px;width:120px;height:100px;
+  background:rgba(22,27,34,.85);border:1px solid var(--border);border-radius:8px;
+  backdrop-filter:blur(8px);z-index:45;overflow:hidden}
+.minimap-title{position:absolute;top:4px;left:6px;font-size:8px;color:var(--muted);letter-spacing:1px;z-index:1}
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-icon">⚡</div>
+  <div class="loading-text">Cargando Planta Baja — 3D...</div>
+</div>
+
+<div id="scene-container"></div>
+
+<div class="hdr">
+  <div class="logo">⚡</div>
+  <div>
+    <div class="hdr-t">Planta Baja — 3D</div>
+    <div class="hdr-s">2 UNIDADES · R.ROJAS/M.STROBEL · AEA 90364</div>
+  </div>
+  <a class="back-btn" href="index.html">← Menú</a>
+  <div class="room-bdg"><div class="room-dot"></div><span id="roomName">Estar Comedor 1</span></div>
+</div>
+
+<div class="consumo-badge">
+  <div class="consumo-lbl">CONSUMO ACTIVO</div>
+  <div class="consumo-val" id="consumoVal">0 W</div>
+  <div class="consumo-sub" id="consumoSub">0 luces encendidas</div>
+</div>
+
+<div class="info-panel hidden" id="infoPanel">
+  <div class="info-title">Elemento seleccionado</div>
+  <div class="info-row"><span>Tipo</span><span class="info-val" id="elTipo">—</span></div>
+  <div class="info-row"><span>Circuito</span><span class="info-val" id="elCircuito">—</span></div>
+  <div class="info-row"><span>Térmica</span><span class="info-val" id="elTermica">—</span></div>
+  <div class="info-row"><span>Estado</span><span class="info-val" id="elEstado">—</span></div>
+</div>
+
+<div class="crosshair" id="crosshair"></div>
+<div class="tooltip" id="tooltip">
+  <div id="tooltipText">Interruptor</div>
+  <div class="sub" id="tooltipSub">Clic para accionar</div>
+</div>
+
+<div class="look-hint" id="lookHint">
+  🖱️ Arrastrá para mirar alrededor &nbsp;·&nbsp; WASD / flechas para moverte<br>
+  📱 En celular: arrastrá con el dedo y usá los botones de abajo
+</div>
+
+<div class="ctrl-bar">
+  <div class="room-tabs" id="roomTabs"></div>
+  <div class="ctrl-row">
+    <button class="btn on" id="lightsAllBtn" onclick="toggleAllLights()">
+      <span class="btn-icon">💡</span> Todas las luces
+    </button>
+    <button class="btn" id="circuitsBtn" onclick="toggleCircuitView()">
+      <span class="btn-icon">🔌</span> Ver circuitos
+    </button>
+    <button class="btn" onclick="resetView()">
+      <span class="btn-icon">↺</span> Centrar vista
+    </button>
+    <button class="btn green" onclick="toggleInfo()">
+      <span class="btn-icon">ℹ</span> Info
+    </button>
+  </div>
+  <div class="ctrl-row" id="moveControls" style="justify-content:center">
+    <button class="btn" id="moveForward" style="padding:12px 18px">⬆</button>
+    <button class="btn" id="moveLeft" style="padding:12px 18px">⬅</button>
+    <button class="btn" id="moveBack" style="padding:12px 18px">⬇</button>
+    <button class="btn" id="moveRight" style="padding:12px 18px">➡</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// ELECTROCAD 3D — PLANTA BAJA REAL — 2 UNIDADES
+// Medidas del plano: R.Rojas esq. M.Strobel
+// 1 unidad = 1 metro real
+// ═══════════════════════════════════════════════════════════
+
+let scene, camera, renderer;
+let yaw = 0, pitch = 0;
+let moveState = { forward:false, back:false, left:false, right:false };
+let isDragging = false, lastX = 0, lastY = 0;
+let interactables = [];
+let lights = {}, lightBulbs = {};
+let circuitView = false;
+let raycaster, mouse;
+let currentRoom = 'ec1';
+let hoveredObject = null;
+let allLightsOn = true;
+
+// ── ROOMS — medidas reales del plano (m) — PB 2 unidades ──
+const ROOMS = {
+  ec1: {
+    name: 'Estar Comedor ① (U1)', size:{w:7.25,d:6.10,h:2.6},
+    wallColor:0xdce8f5, floorColor:0x9b8266,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C3',termica:'10A',pos:[-2.2,2.5,0],on:true,power:60},
+      {type:'luz',id:'L2',circuit:'C3',termica:'10A',pos:[2.2,2.5,0],on:true,power:60},
+      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.5,1.2,2],wall:'left',power:0},
+      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.5,1.2,-2],wall:'left',power:0},
+      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.5,1.2,1],wall:'right',power:0},
+      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,1.2,-2.9],wall:'back',power:0},
+      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.5,1.4,2.8],wall:'left',linkLight:'L1,L2'},
+      {type:'tablero',id:'TAB1',circuit:'IGA U1',termica:'40A',pos:[3.5,1.6,2.6],wall:'right'},
+    ]
+  },
+  coc2: {
+    name: 'Cocina ② (U1)', size:{w:3.35,d:2.75,h:2.6},
+    wallColor:0xf0ede5, floorColor:0x8a8580,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C5',termica:'10A',pos:[0,2.5,0],on:true,power:50},
+      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,1.2,0.8],wall:'left',power:0},
+      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,1.2,-0.8],wall:'right',power:1800},
+      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.4,1.1],wall:'left',linkLight:'L1'},
+    ]
+  },
+  toil1: {
+    name: 'Toilette (U1)', size:{w:1.70,d:1.50,h:2.4},
+    wallColor:0xdeeef2, floorColor:0xb8c4c8,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C1',termica:'10A',pos:[0,2.3,0],on:true,power:40},
+      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.75,1.2,0.4],wall:'right',power:0},
+      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.75,1.5,0.5],wall:'left',linkLight:'L1'},
+      {type:'dif',id:'DIF1',circuit:'C1,C2',termica:'25A/30mA',pos:[-0.75,1.9,-0.4],wall:'left'},
+    ]
+  },
+  ec3: {
+    name: 'Estar Comedor ③ (U2)', size:{w:6.75,d:5.60,h:2.6},
+    wallColor:0xfae6d4, floorColor:0x9b8266,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C3',termica:'10A',pos:[-2,2.5,0],on:true,power:60},
+      {type:'luz',id:'L2',circuit:'C3',termica:'10A',pos:[2,2.5,0],on:true,power:60},
+      {type:'toma',id:'T1',circuit:'C4',termica:'20A',pos:[-3.2,1.2,1.8],wall:'left',power:0},
+      {type:'toma',id:'T2',circuit:'C4',termica:'20A',pos:[-3.2,1.2,-1.8],wall:'left',power:0},
+      {type:'toma',id:'T3',circuit:'C4',termica:'20A',pos:[3.2,1.2,0.5],wall:'right',power:0},
+      {type:'toma',id:'T4',circuit:'C4',termica:'20A',pos:[0,1.2,-2.6],wall:'back',power:0},
+      {type:'interruptor',id:'S1',circuit:'C3',termica:'10A',pos:[-3.2,1.4,2.5],wall:'left',linkLight:'L1,L2'},
+      {type:'tablero',id:'TAB2',circuit:'IGA U2',termica:'40A',pos:[3.2,1.6,2.3],wall:'right'},
+    ]
+  },
+  coc4: {
+    name: 'Cocina ④ (U2)', size:{w:3.35,d:2.75,h:2.6},
+    wallColor:0xf0ede5, floorColor:0x8a8580,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C5',termica:'10A',pos:[0,2.5,0],on:true,power:50},
+      {type:'toma',id:'T1',circuit:'C6',termica:'20A',pos:[-1.55,1.2,0.8],wall:'left',power:0},
+      {type:'toma-gf',id:'T2',circuit:'C7',termica:'20A',pos:[1.55,1.2,-0.8],wall:'right',power:1800},
+      {type:'interruptor',id:'S1',circuit:'C5',termica:'10A',pos:[-1.55,1.4,1.1],wall:'left',linkLight:'L1'},
+    ]
+  },
+  toil2: {
+    name: 'Toilette (U2)', size:{w:1.80,d:0.90,h:2.4},
+    wallColor:0xdeeef2, floorColor:0xb8c4c8,
+    elements:[
+      {type:'luz',id:'L1',circuit:'C1',termica:'10A',pos:[0,2.3,0],on:true,power:40},
+      {type:'toma-gf',id:'T1',circuit:'C2',termica:'16A',pos:[0.8,1.2,0.3],wall:'right',power:0},
+      {type:'interruptor',id:'S1',circuit:'C1',termica:'10A',pos:[-0.8,1.5,0.3],wall:'left',linkLight:'L1'},
+      {type:'dif',id:'DIF2',circuit:'C1,C2',termica:'25A/30mA',pos:[-0.8,1.9,-0.25],wall:'left'},
+    ]
+  }
+};
+
+// ═══ INIT ═══
+function init() {
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x1a1a22);
+  scene.fog = new THREE.Fog(0x1a1a22, 8, 18);
+
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.05, 50);
+  camera.position.set(0, 1.6, 0);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.getElementById('scene-container').appendChild(renderer.domElement);
+
+  raycaster = new THREE.Raycaster();
+  mouse = new THREE.Vector2(0, 0);
+
+  buildRoom(currentRoom);
+  buildRoomTabs();
+  setupControls();
+  animate();
+
+  document.getElementById('loading').style.display = 'none';
+  setTimeout(() => document.getElementById('lookHint').classList.add('hide'), 4500);
+}
+
+function buildRoom(roomKey) {
+  while(scene.children.length > 0) scene.remove(scene.children[0]);
+  interactables = []; lights = {}; lightBulbs = {};
+
+  const room = ROOMS[roomKey];
+  const { w, d, h } = room.size;
+  document.getElementById('roomName').textContent = room.name + ` (${w}×${d}m)`;
+
+  const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+  scene.add(ambient);
+
+  // Floor
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: room.floorColor, roughness: 0.8 }));
+  floor.rotation.x = -Math.PI/2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  const grid = new THREE.GridHelper(Math.max(w,d), Math.max(2,Math.round(Math.max(w,d))), 0x000000, 0x000000);
+  grid.material.opacity = 0.06; grid.material.transparent = true; grid.position.y = 0.005;
+  scene.add(grid);
+
+  // Ceiling
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(w, d), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95 }));
+  ceiling.rotation.x = Math.PI/2; ceiling.position.y = h;
+  scene.add(ceiling);
+
+  const wallMat = new THREE.MeshStandardMaterial({ color: room.wallColor, roughness: 0.9 });
+
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat);
+  back.position.set(0, h/2, -d/2); back.receiveShadow = true; scene.add(back);
+
+  const front = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wallMat.clone());
+  front.position.set(0, h/2, d/2); front.rotation.y = Math.PI; scene.add(front);
+
+  const left = new THREE.Mesh(new THREE.PlaneGeometry(d, h), wallMat.clone());
+  left.position.set(-w/2, h/2, 0); left.rotation.y = Math.PI/2; left.receiveShadow = true; scene.add(left);
+
+  const right = new THREE.Mesh(new THREE.PlaneGeometry(d, h), wallMat.clone());
+  right.position.set(w/2, h/2, 0); right.rotation.y = -Math.PI/2; right.receiveShadow = true; scene.add(right);
+
+  // baseboards
+  const baseGeo = new THREE.BoxGeometry(w-0.02, 0.08, 0.03);
+  [-d/2+0.015, d/2-0.015].forEach((z,i) => {
+    const base = new THREE.Mesh(baseGeo, new THREE.MeshStandardMaterial({ color: 0xffffff }));
+    base.position.set(0, 0.05, z);
+    if(i===1) base.rotation.y = Math.PI;
+    scene.add(base);
+  });
+
+  // window on back wall (if room is big enough)
+  if (w > 2) {
+    const winW = Math.min(w*0.4, 1.2), winH = Math.min(h*0.45, 1.0);
+    const window1 = new THREE.Mesh(new THREE.PlaneGeometry(winW, winH),
+      new THREE.MeshStandardMaterial({ color: 0x87CEEB, emissive: 0x4488aa, emissiveIntensity: 0.3 }));
+    window1.position.set(0, h*0.6, -d/2+0.01);
+    scene.add(window1);
+  }
+
+  room.elements.forEach(el => buildElement(el, room));
+
+  const fill = new THREE.HemisphereLight(0xffffff, 0x444444, 0.55);
+  scene.add(fill);
+
+  // Position camera at room center, eye height
+  camera.position.set(0, Math.min(1.6, h*0.6), 0);
+
+  updateConsumo();
+}
+
+function buildElement(el, room) {
+  const group = new THREE.Group();
+  group.userData = { ...el, roomRef: room };
+  group.position.set(...el.pos);
+
+  if (el.type === 'luz') {
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), new THREE.MeshStandardMaterial({
+      color: el.on?0xfff4d6:0x888888, emissive: el.on?0xffdd88:0x000000, emissiveIntensity: el.on?1.2:0
+    }));
+    group.add(bulb); lightBulbs[el.id] = bulb;
+
+    const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,0.15), new THREE.MeshStandardMaterial({ color:0x333333 }));
+    cord.position.y = 0.12; group.add(cord);
+
+    const pl = new THREE.PointLight(0xfff4d6, el.on?1.4:0, Math.max(room.size.w,room.size.d)*1.8, 1.6);
+    pl.castShadow = true; group.add(pl); lights[el.id] = pl;
+
+    group.userData.clickable = true;
+
+  } else if (el.type === 'toma' || el.type === 'toma-gf') {
+    const color = el.type==='toma-gf' ? 0xA855F7 : 0x2B8FE8;
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.12,0.20,0.02), new THREE.MeshStandardMaterial({ color:0xf5f5f0, roughness:0.4 }));
+    orientToWall(plate, el.wall); group.add(plate);
+
+    const holeGeo = new THREE.CylinderGeometry(0.012,0.012,0.025,8);
+    const holeMat = new THREE.MeshStandardMaterial({ color:0x222222 });
+    [[-0.025,0.035],[0.025,0.035],[0,-0.035]].forEach(([dx,dy]) => {
+      const hole = new THREE.Mesh(holeGeo, holeMat);
+      orientToWall(hole, el.wall);
+      hole.position.add(wallOffset(el.wall, dx, dy, 0.012));
+      group.add(hole);
+    });
+
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.09,0.10,16), new THREE.MeshBasicMaterial({ color, side:THREE.DoubleSide }));
+    orientToWall(ring, el.wall);
+    ring.position.add(wallOffset(el.wall,0,0,0.011));
+    group.add(ring);
+
+    group.userData.clickable = true; group.userData.color = color;
+
+  } else if (el.type === 'interruptor') {
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(0.10,0.15,0.015), new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.3 }));
+    orientToWall(plate, el.wall); group.add(plate);
+
+    const tog = new THREE.Mesh(new THREE.BoxGeometry(0.035,0.06,0.012), new THREE.MeshStandardMaterial({ color:0x22C55E, emissive:0x22C55E, emissiveIntensity:0.3 }));
+    orientToWall(tog, el.wall);
+    tog.position.add(wallOffset(el.wall,0,0,0.012));
+    group.add(tog); group.userData.toggleMesh = tog;
+
+    group.userData.clickable = true; group.userData.linkLight = el.linkLight;
+
+  } else if (el.type === 'tablero') {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.35,0.5,0.06), new THREE.MeshStandardMaterial({ color:0x2a2a35, roughness:0.5 }));
+    orientToWall(box, el.wall); group.add(box);
+
+    const door = new THREE.Mesh(new THREE.BoxGeometry(0.31,0.46,0.01), new THREE.MeshStandardMaterial({ color:0xe0e0e8, roughness:0.3, metalness:0.3 }));
+    orientToWall(door, el.wall);
+    door.position.add(wallOffset(el.wall,0,0,0.033));
+    group.add(door);
+
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.31,0.04,0.003), new THREE.MeshStandardMaterial({ color:0xF5A623, emissive:0xF5A623, emissiveIntensity:0.3 }));
+    orientToWall(stripe, el.wall);
+    stripe.position.add(wallOffset(el.wall,0,0.18,0.035));
+    group.add(stripe);
+
+    group.userData.clickable = true;
+
+  } else if (el.type === 'dif') {
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.15,0.20,0.04), new THREE.MeshStandardMaterial({ color:0x22C55E, roughness:0.4, emissive:0x22C55E, emissiveIntensity:0.15 }));
+    orientToWall(box, el.wall); group.add(box);
+    group.userData.clickable = true;
+  }
+
+  scene.add(group);
+  if (group.userData.clickable) interactables.push(group);
+}
+
+function orientToWall(mesh, wall) {
+  switch(wall) {
+    case 'left': mesh.rotation.y = Math.PI/2; break;
+    case 'right': mesh.rotation.y = -Math.PI/2; break;
+    case 'back': mesh.rotation.y = 0; break;
+    case 'front': mesh.rotation.y = Math.PI; break;
+  }
+}
+function wallOffset(wall, dx, dy, dz) {
+  switch(wall) {
+    case 'left': return new THREE.Vector3(dz, dy, dx);
+    case 'right': return new THREE.Vector3(-dz, dy, -dx);
+    case 'back': return new THREE.Vector3(dx, dy, dz);
+    case 'front': return new THREE.Vector3(-dx, dy, -dz);
+    default: return new THREE.Vector3(dx,dy,dz);
+  }
+}
+
+function buildRoomTabs() {
+  const wrap = document.getElementById('roomTabs');
+  wrap.innerHTML = '';
+  const icons = {ec1:'🛋️①',coc2:'🍳②',toil1:'🚽1',ec3:'🛋️③',coc4:'🍳④',toil2:'🚽2'};
+  Object.keys(ROOMS).forEach(key => {
+    const tab = document.createElement('div');
+    tab.className = 'room-tab' + (key===currentRoom?' on':'');
+    tab.textContent = (icons[key]||'') + ' ' + ROOMS[key].name;
+    tab.onclick = () => switchRoom(key);
+    wrap.appendChild(tab);
+  });
+}
+function switchRoom(key) {
+  if (key === currentRoom) return;
+  currentRoom = key; yaw = 0; pitch = 0;
+  buildRoom(key); buildRoomTabs();
+  document.getElementById('infoPanel').classList.add('hidden');
+}
+
+function setupControls() {
+  const canvas = renderer.domElement;
+  canvas.addEventListener('pointerdown', e => { isDragging = true; lastX=e.clientX; lastY=e.clientY; });
+  window.addEventListener('pointermove', e => {
+    mouse.x = (e.clientX/window.innerWidth)*2-1;
+    mouse.y = -(e.clientY/window.innerHeight)*2+1;
+    checkHover();
+    if (!isDragging) return;
+    const dx = e.clientX-lastX, dy = e.clientY-lastY;
+    yaw -= dx*0.003; pitch -= dy*0.003;
+    pitch = Math.max(-1.3, Math.min(1.3, pitch));
+    lastX=e.clientX; lastY=e.clientY;
+  });
+  window.addEventListener('pointerup', () => isDragging = false);
+
+  let downPos = {x:0,y:0};
+  canvas.addEventListener('pointerdown', e => { downPos = {x:e.clientX,y:e.clientY}; });
+  canvas.addEventListener('pointerup', e => {
+    if (Math.hypot(e.clientX-downPos.x, e.clientY-downPos.y) < 6) handleClick();
+  });
+
+  window.addEventListener('keydown', e => {
+    switch(e.key.toLowerCase()) {
+      case 'w': case 'arrowup': moveState.forward=true; break;
+      case 's': case 'arrowdown': moveState.back=true; break;
+      case 'a': case 'arrowleft': moveState.left=true; break;
+      case 'd': case 'arrowright': moveState.right=true; break;
+      case ' ': handleClick(); break;
+    }
+  });
+  window.addEventListener('keyup', e => {
+    switch(e.key.toLowerCase()) {
+      case 'w': case 'arrowup': moveState.forward=false; break;
+      case 's': case 'arrowdown': moveState.back=false; break;
+      case 'a': case 'arrowleft': moveState.left=false; break;
+      case 'd': case 'arrowright': moveState.right=false; break;
+    }
+  });
+
+  const bind = (id,key) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const start = e => { e.preventDefault(); moveState[key]=true; };
+    const end = e => { e.preventDefault(); moveState[key]=false; };
+    btn.addEventListener('touchstart',start); btn.addEventListener('touchend',end);
+    btn.addEventListener('mousedown',start); btn.addEventListener('mouseup',end); btn.addEventListener('mouseleave',end);
+  };
+  bind('moveForward','forward'); bind('moveBack','back'); bind('moveLeft','left'); bind('moveRight','right');
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+
+function checkHover() {
+  raycaster.setFromCamera(mouse, camera);
+  const targets = [];
+  interactables.forEach(g => g.traverse(o => { if(o.isMesh){ o.userData.__group=g; targets.push(o); } }));
+  const hits = raycaster.intersectObjects(targets);
+  const crosshair = document.getElementById('crosshair');
+  const tooltip = document.getElementById('tooltip');
+  if (hits.length>0 && hits[0].distance < 2.2) {
+    const group = hits[0].object.userData.__group;
+    hoveredObject = group;
+    crosshair.classList.add('hover'); tooltip.classList.add('show');
+    document.getElementById('tooltipText').textContent = labelFor(group.userData);
+    document.getElementById('tooltipSub').textContent = subLabelFor(group.userData);
+  } else {
+    hoveredObject = null;
+    crosshair.classList.remove('hover'); tooltip.classList.remove('show');
+  }
+}
+
+function labelFor(d) {
+  const names = {
+    luz: '💡 Boca de luz', toma: '⬡ Tomacorriente', 'toma-gf': '⬡ Toma GFCI (baño)',
+    interruptor: '⧉ Interruptor', tablero: '▣ Tablero eléctrico', dif: '🛡️ Diferencial'
+  };
+  return names[d.type] || d.type;
+}
+function subLabelFor(d) {
+  if (d.type==='interruptor') return `Circuito ${d.circuit} · ${d.termica} · Clic para encender/apagar`;
+  if (d.type==='luz') return `Circuito ${d.circuit} · ${d.termica} · ${d.on?'Encendida':'Apagada'}`;
+  if (d.type==='tablero') return 'Tablero principal — clic para detalle';
+  return `Circuito ${d.circuit} · ${d.termica}`;
+}
+
+function handleClick() {
+  if (!hoveredObject) return;
+  const d = hoveredObject.userData;
+  if (d.type === 'interruptor') {
+    const ids = (d.linkLight||'').split(',');
+    ids.forEach(id => toggleLight(id.trim()));
+    const tog = hoveredObject.userData.toggleMesh;
+    const anyOn = ids.some(id => ROOMS[currentRoom].elements.find(e=>e.id===id.trim())?.on);
+    tog.material.color.set(anyOn?0x22C55E:0xEF4444);
+    tog.material.emissive.set(anyOn?0x22C55E:0xEF4444);
+  }
+  showInfo(d);
+}
+
+function toggleLight(id) {
+  const el = ROOMS[currentRoom].elements.find(e=>e.id===id);
+  if (!el) return;
+  el.on = !el.on;
+  const light = lights[id], bulb = lightBulbs[id];
+  if (light) light.intensity = el.on?1.4:0;
+  if (bulb) {
+    bulb.material.color.set(el.on?0xfff4d6:0x888888);
+    bulb.material.emissive.set(el.on?0xffdd88:0x000000);
+    bulb.material.emissiveIntensity = el.on?1.2:0;
+  }
+  updateConsumo();
+}
+
+function showInfo(d) {
+  document.getElementById('infoPanel').classList.remove('hidden');
+  document.getElementById('elTipo').textContent = labelFor(d).replace(/^[^\s]+\s/,'');
+  document.getElementById('elCircuito').textContent = d.circuit;
+  document.getElementById('elTermica').textContent = d.termica;
+  const estado = d.type==='luz' ? (d.on?'Encendida':'Apagada') :
+                  d.type==='interruptor' ? '—' :
+                  d.type==='tablero' ? 'Normal' : 'Disponible';
+  const el = document.getElementById('elEstado');
+  el.textContent = estado;
+  el.className = 'info-val ' + (estado==='Encendida'?'tg':estado==='Apagada'?'tr':'');
+}
+
+function updateConsumo() {
+  let total = 0, count = 0;
+  ROOMS[currentRoom].elements.forEach(el => {
+    if (el.type==='luz' && el.on) { total += (el.power||0); count++; }
+  });
+  document.getElementById('consumoVal').textContent = total + ' W';
+  document.getElementById('consumoSub').textContent = count + ' luz' + (count===1?'':'es') + ' encendida' + (count===1?'':'s');
+}
+
+function toggleAllLights() {
+  allLightsOn = !allLightsOn;
+  document.getElementById('lightsAllBtn').classList.toggle('on', allLightsOn);
+  Object.keys(ROOMS).forEach(rk => ROOMS[rk].elements.forEach(el => { if(el.type==='luz') el.on = allLightsOn; }));
+  ROOMS[currentRoom].elements.forEach(el => {
+    if (el.type==='luz') {
+      const light=lights[el.id], bulb=lightBulbs[el.id];
+      if (light) light.intensity = el.on?1.4:0;
+      if (bulb) {
+        bulb.material.color.set(el.on?0xfff4d6:0x888888);
+        bulb.material.emissive.set(el.on?0xffdd88:0x000000);
+        bulb.material.emissiveIntensity = el.on?1.2:0;
+      }
+    }
+  });
+  updateConsumo();
+}
+
+function toggleCircuitView() {
+  circuitView = !circuitView;
+  document.getElementById('circuitsBtn').classList.toggle('on', circuitView);
+  if (circuitView) {
+    interactables.forEach(g => g.traverse(o => {
+      if (o.isMesh && g.userData.color) { o.material.emissive = new THREE.Color(g.userData.color); o.material.emissiveIntensity = 0.6; }
+    }));
+  } else {
+    buildRoom(currentRoom);
+  }
+}
+
+function resetView() { yaw=0; pitch=0; camera.position.set(0, Math.min(1.6, ROOMS[currentRoom].size.h*0.6), 0); }
+function toggleInfo() { document.getElementById('infoPanel').classList.toggle('hidden'); }
+
+function animate() {
+  requestAnimationFrame(animate);
+  const speed = 0.025;
+  const room = ROOMS[currentRoom];
+  const dir = new THREE.Vector3();
+  if (moveState.forward) dir.z -= 1;
+  if (moveState.back) dir.z += 1;
+  if (moveState.left) dir.x -= 1;
+  if (moveState.right) dir.x += 1;
+  if (dir.length() > 0) {
+    dir.normalize().applyAxisAngle(new THREE.Vector3(0,1,0), yaw);
+    camera.position.x += dir.x*speed;
+    camera.position.z += dir.z*speed;
+    const margin = 0.25;
+    camera.position.x = Math.max(-room.size.w/2+margin, Math.min(room.size.w/2-margin, camera.position.x));
+    camera.position.z = Math.max(-room.size.d/2+margin, Math.min(room.size.d/2-margin, camera.position.z));
+  }
+  const lookDir = new THREE.Vector3(Math.sin(yaw)*Math.cos(pitch), Math.sin(pitch), -Math.cos(yaw)*Math.cos(pitch));
+  camera.lookAt(camera.position.clone().add(lookDir));
+  renderer.render(scene, camera);
+}
+
+init();
+</script>
+</body>
+</html>
